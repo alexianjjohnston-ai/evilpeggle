@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nightmare Peggle — Ultimate One‑File Edition</title>
+  <title>Evil Peggle</title>
   <style>
     html,body{height:100%}
     body{margin:0;background:#07070a;color:#ececf1;font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial}
-    .wrap{display:grid;grid-template-rows:auto 1fr auto; height:100%}
-    header{display:flex;align-items:center;gap:.75rem;padding:.5rem 1rem;background:linear-gradient(180deg,#141418, #0b0b0e);border-bottom:1px solid #1a1a1f;position:sticky;top:0;z-index:10}
+    .wrap{display:grid;grid-template-rows:auto 1fr auto;height:100%}
+    header{display:flex;flex-wrap:wrap;align-items:flex-start;gap:1rem;padding:.75rem 1rem;background:linear-gradient(180deg,#141418,#0b0b0e);border-bottom:1px solid #1a1a1f;position:sticky;top:0;z-index:10}
     header h1{font-size:12px;margin:0;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
-    header .sp{flex:1}
+    header .sp{flex:1 0 40px}
     .btn, select{cursor:pointer;user-select:none;border:1px solid #2a2a33;background:#121218;border-radius:10px;padding:.45rem .7rem;display:inline-flex;align-items:center;gap:.5rem;color:#eaeaf0}
     .btn:hover{background:#171723}
     .danger{border-color:#3a1820;background:#17060a;color:#fecaca}
     .good{border-color:#1d3a26;background:#06140a;color:#bbf7d0}
-    .row{display:flex;align-items:center;gap:.5rem}
-    main{display:grid;place-items:center;padding:.5rem}
+    .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+    main{display:flex;align-items:center;justify-content:center;gap:1.5rem;padding:1rem}
 
     /* CRT look */
     .crt{position:relative}
@@ -24,16 +24,36 @@
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 160px rgba(0,0,0,.75)}
 
     canvas{background:#0a0a0c;border:1px solid #1b1b1f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
-    footer{display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;border-top:1px solid #17171a;background:linear-gradient(180deg,#0a0a0c,#070708)}
-    .meter{height:8px;border-radius:999px;background:#111214;border:1px solid #222;position:relative;overflow:hidden;width:260px}
-    .meter>i{position:absolute;inset:0;background:linear-gradient(90deg, #e11d48, #f43f5e, #e11d48);transform-origin:left center;}
+    footer{display:flex;justify-content:center;align-items:center;gap:1rem;padding:.75rem 1rem;border-top:1px solid #17171a;background:linear-gradient(180deg,#0a0a0c,#070708)}
+    .title-group{display:flex;flex-direction:column;gap:.45rem;min-width:220px}
+    .fear-bar{display:flex;align-items:center;gap:.6rem;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+    .fear-bar .label{opacity:.6}
+    #fearLabel{font-weight:600;letter-spacing:.08em}
+    .meter{height:8px;border-radius:999px;background:#111214;border:1px solid #222;position:relative;overflow:hidden}
+    .meter>i{position:absolute;inset:0;background:linear-gradient(90deg,#e11d48,#f43f5e,#e11d48);transform-origin:left center;transition:transform .2s ease-out;}
+    .meter.fear{width:220px;height:10px}
+    .meter.progress{width:320px}
     .hud{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-    .badge{padding:.25rem .5rem;border:1px solid #24242a;border-radius:8px;background:#0f0f12}
+    .sidebar{display:flex;flex-direction:column;gap:.75rem;min-width:160px}
+    .sidebar.right{align-items:flex-end}
+    .badge{padding:.35rem .75rem;border:1px solid #24242a;border-radius:8px;background:#0f0f12;display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-width:150px}
+    .badge b{font-size:16px;letter-spacing:.04em}
     .overlay{position:absolute;inset:0;display:grid;place-items:center;color:#e5e7eb;pointer-events:none}
+    .streak-pop{position:absolute;font:700 24px/1 Inter, ui-sans-serif, system-ui;color:#f87171;text-shadow:0 0 12px rgba(248,113,113,.6);pointer-events:none}
     .menu{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(10,10,12,.72);backdrop-filter:blur(6px);padding:28px;border:1px solid #222;border-radius:14px;text-align:center}
     .title{font:800 46px/1.05 "Cinzel", Trajan, serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;text-shadow:0 0 18px #a00}
     .subtitle{opacity:.9}
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
+    @media (max-width:1100px){
+      main{flex-direction:column;gap:1rem}
+      .sidebar{flex-direction:row;align-items:center;justify-content:center;flex-wrap:wrap;min-width:0}
+      .sidebar.right{align-items:center}
+      .badge{min-width:140px}
+      header{align-items:center}
+    }
+    @media (max-width:700px){
+      .meter.fear{width:180px}
+    }
     .flash{animation:flash 1.6s infinite}
     @keyframes flash{0%,60%{opacity:.25} 70%{opacity:.7} 100%{opacity:.25}}
   </style>
@@ -41,7 +61,16 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Nightmare Peggle — Ultimate One‑File</h1>
+      <div class="title-group">
+        <h1>Evil Peggle</h1>
+        <div class="fear-bar">
+          <span class="label">Fear</span>
+          <div class="meter fear" title="Current terror level">
+            <i id="fearFill" style="transform:scaleX(0)"></i>
+          </div>
+          <span id="fearLabel">0%</span>
+        </div>
+      </div>
       <div class="sp"></div>
       <div class="row">
         <label>Quality <select id="quality"><option>Low</option><option selected>Med</option><option>High</option></select></label>
@@ -51,22 +80,22 @@
       </div>
     </header>
     <main>
+      <aside class="sidebar left">
+        <span class="badge">Level: <b id="levelLabel">1</b></span>
+        <span class="badge">Balls: <b id="ballsLabel">10</b></span>
+        <span class="badge">Cursed left: <b id="cursedLabel">—</b></span>
+      </aside>
       <div class="crt">
         <canvas id="game" width="960" height="640"></canvas>
         <div class="overlay" id="uiOverlay"></div>
       </div>
+      <aside class="sidebar right">
+        <span class="badge">Score: <b id="scoreLabel">0</b></span>
+        <span class="badge">Power: <b id="powerLabel">—</b></span>
+      </aside>
     </main>
     <footer>
-      <div class="hud">
-        <span class="badge">Level: <b id="levelLabel">1</b></span>
-        <span class="badge">Balls: <b id="ballsLabel">10</b></span>
-        <span class="badge">Cursed left: <b id="cursedLabel">—</b></span>
-        <span class="badge">Score: <b id="scoreLabel">0</b></span>
-        <span class="badge">Streak: <b id="streakLabel">0</b></span>
-        <span class="badge">Fear: <b id="fearLabel">0%</b></span>
-        <span class="badge">Power: <b id="powerLabel">—</b></span>
-      </div>
-      <div class="meter" title="Progress to next level">
+      <div class="meter progress" title="Progress to next level">
         <i id="progressFill" style="transform:scaleX(0)"></i>
       </div>
     </footer>
@@ -83,10 +112,10 @@
   // ===== HUD refs =====
   const ballsLabel = document.getElementById('ballsLabel');
   const scoreLabel = document.getElementById('scoreLabel');
-  const streakLabel = document.getElementById('streakLabel');
   const cursedLabel = document.getElementById('cursedLabel');
   const levelLabel  = document.getElementById('levelLabel');
   const fearLabel   = document.getElementById('fearLabel');
+  const fearFill    = document.getElementById('fearFill');
   const powerLabel  = document.getElementById('powerLabel');
   const progressFill= document.getElementById('progressFill');
 
@@ -112,23 +141,179 @@
 
   // ===== Audio (procedural) =====
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  let ac; let audioEnabled = true;
-  function ensureAudio(){ if(!ac){ ac = new AudioCtx(); startMusic(); }}
-  function tone(freq=200, dur=0.06, type='square', gain=0.02){ if(!audioEnabled) return; ensureAudio(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); }
-  function noise(ms=100, vol=.12){ if(!audioEnabled) return; ensureAudio(); const n=ac.createBuffer(1, ac.sampleRate*ms/1000, ac.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=vol; s.connect(g); g.connect(ac.destination); s.start(); }
-  function sting(){ if(!audioEnabled) return; ensureAudio(); const g=ac.createGain(); g.gain.value=.05; g.connect(ac.destination); [110, 147, 196, 277].forEach((f,i)=>{ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.value=f; o.connect(g); o.start(); o.stop(ac.currentTime+0.5+i*0.02)}); }
-  function subBoom(){ if(!audioEnabled) return; ensureAudio(); const o=ac.createOscillator(); const g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(160, ac.currentTime); o.frequency.exponentialRampToValueAtTime(40, ac.currentTime+0.6); g.gain.value=.06; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.65); }
+  let ac;
+  let audioEnabled = true;
+  let musicNode = null;
+  let musicPulse = null;
 
-  // Dissonant loop (detuned organ)
-  let musicNode; function startMusic(){ if(!audioEnabled) return; if(musicNode){ try{musicNode.stop();}catch{}} ensureAudio(); const g=ac.createGain(); g.gain.value=.03; g.connect(ac.destination); const freqs=[196, 247, 330]; const detunes=[-8, 0, +7]; const oscs=[]; for(let i=0;i<freqs.length;i++){ const o=ac.createOscillator(); o.type='triangle'; o.frequency.value=freqs[i]; o.detune.value=detunes[i]; o.connect(g); o.start(); oscs.push(o);} // slow filter wobble
-    setInterval(()=>{ if(!ac) return; g.gain.value = .02 + Math.random()*0.015; }, 1200);
-    musicNode = { stop(){ oscs.forEach(o=>o.stop()); } };
+  function ensureAudio(){
+    if(!AudioCtx) return null;
+    if(!ac){
+      ac = new AudioCtx();
+    }
+    if(audioEnabled && ac && ac.state === 'suspended'){
+      ac.resume();
+    }
+    return ac;
+  }
+
+  function stopMusic(){
+    if(musicNode){
+      try{ musicNode.stop(); } catch {}
+      musicNode = null;
+    }
+    if(musicPulse){
+      clearInterval(musicPulse);
+      musicPulse = null;
+    }
+  }
+
+  function startMusic(){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    stopMusic();
+    const g = ac.createGain();
+    g.gain.value = .03;
+    g.connect(ac.destination);
+    const freqs = [196, 247, 330];
+    const detunes = [-8, 0, +7];
+    const oscs = [];
+    for(let i=0;i<freqs.length;i++){
+      const o = ac.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = freqs[i];
+      o.detune.value = detunes[i];
+      o.connect(g);
+      o.start();
+      oscs.push(o);
+    }
+    musicPulse = setInterval(()=>{
+      if(!audioEnabled || !ac) return;
+      g.gain.value = .02 + Math.random()*0.015;
+    }, 1200);
+    musicNode = {
+      stop(){
+        oscs.forEach(o=>{
+          try{o.stop();}catch{}
+        });
+        g.disconnect();
+      }
+    };
+  }
+
+  function armMusic(){
+    if(audioEnabled && !musicNode){
+      startMusic();
+    }
+  }
+
+  function tone(freq=200, dur=0.06, type='square', gain=0.02){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    const o=ac.createOscillator();
+    const g=ac.createGain();
+    o.type=type;
+    o.frequency.value=freq;
+    g.gain.value=gain;
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime+dur);
+    armMusic();
+  }
+
+  function noise(ms=100, vol=.12){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    const n=ac.createBuffer(1, ac.sampleRate*ms/1000, ac.sampleRate);
+    const d=n.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+    const s=ac.createBufferSource();
+    s.buffer=n;
+    const g=ac.createGain();
+    g.gain.value=vol;
+    s.connect(g);
+    g.connect(ac.destination);
+    s.start();
+    armMusic();
+  }
+
+  function sting(){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    const g=ac.createGain();
+    g.gain.value=.05;
+    g.connect(ac.destination);
+    [110,147,196,277].forEach((f,i)=>{
+      const o=ac.createOscillator();
+      o.type='sawtooth';
+      o.frequency.value=f;
+      o.connect(g);
+      o.start();
+      o.stop(ac.currentTime+0.5+i*0.02);
+    });
+    armMusic();
+  }
+
+  function subBoom(){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    const o=ac.createOscillator();
+    const g=ac.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(160, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(40, ac.currentTime+0.6);
+    g.gain.value=.06;
+    o.connect(g);
+    g.connect(ac.destination);
+    o.start();
+    o.stop(ac.currentTime+0.65);
+    armMusic();
   }
 
   // Whispers (procedural hiss + formant-ish tone)
-  function whisper(){ if(!audioEnabled) return; ensureAudio(); const dur=0.9; const n=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*0.4*(1-t); } const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=.03; s.connect(g); g.connect(ac.destination); s.start(); }
+  function whisper(){
+    if(!audioEnabled) return;
+    ensureAudio();
+    if(!ac) return;
+    const dur=0.9;
+    const n=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate);
+    const d=n.getChannelData(0);
+    for(let i=0;i<d.length;i++){
+      const t=i/d.length;
+      d[i]=(Math.random()*2-1)*0.4*(1-t);
+    }
+    const s=ac.createBufferSource();
+    s.buffer=n;
+    const g=ac.createGain();
+    g.gain.value=.03;
+    s.connect(g);
+    g.connect(ac.destination);
+    s.start();
+    armMusic();
+  }
 
-  muteBtn.onclick = () => { audioEnabled=!audioEnabled; muteBtn.textContent = audioEnabled? '🔊 Audio':'🔇 Muted'; if(audioEnabled){ ensureAudio(); tone(720,0.06,'sine',0.03);} };
+  function setAudioEnabled(enabled){
+    audioEnabled = enabled;
+    muteBtn.textContent = audioEnabled ? '🔊 Audio' : '🔇 Muted';
+    if(audioEnabled){
+      ensureAudio();
+      startMusic();
+      tone(720,0.06,'sine',0.03);
+    } else {
+      stopMusic();
+      if(ac && typeof ac.suspend==='function'){
+        ac.suspend();
+      }
+    }
+  }
+
+  muteBtn.onclick = () => setAudioEnabled(!audioEnabled);
 
   // ===== Sprites (embedded SVG -> Image) =====
   const Spr = {};
@@ -275,13 +460,14 @@
       updateHUD();
     } }
 
-  function hitPeg(p, pierce){ if(p.type==='steel'){ noise(90,.18); screenShake(3); world.streak=0; world.score+=5; return; } p.hit = true; world.streak++; world.score += 60 + world.streak*12; noise(120,.22); screenShake(6); world.fear = Math.min(100, world.fear + 1 + Math.random()*1.8); const k = Math.floor(18*quality.mul); for(let i=0;i<k;i++) world.particles.push(new Particle(p.x, p.y, (Math.random()*2-1)*4.6, (Math.random()*2-1)*4.2, 36+Math.random()*30, .6+Math.random()*0.8)); for(let i=0;i<Math.floor(4*quality.mul);i++) addDecal(p.x+(Math.random()*2-1)*16, p.y+(Math.random()*2-1)*16); if(p.type==='cursed'){ world.clearedCursed++; tone(240,0.08,'sawtooth',0.05); dropPowerupChance(p.x,p.y); if(world.fear>60 && Math.random()<0.35) whisper(); if(world.fear>70) { subBoom(); } }
+  function hitPeg(p, pierce){ if(p.type==='steel'){ noise(90,.18); screenShake(3); world.streak=0; world.score+=5; return; } p.hit = true; world.streak++; world.score += 60 + world.streak*12; showStreakPopup(world.streak, p.x, Math.max(50, p.y-26)); noise(120,.22); screenShake(6); world.fear = Math.min(100, world.fear + 1 + Math.random()*1.8); const k = Math.floor(18*quality.mul); for(let i=0;i<k;i++) world.particles.push(new Particle(p.x, p.y, (Math.random()*2-1)*4.6, (Math.random()*2-1)*4.2, 36+Math.random()*30, .6+Math.random()*0.8)); for(let i=0;i<Math.floor(4*quality.mul);i++) addDecal(p.x+(Math.random()*2-1)*16, p.y+(Math.random()*2-1)*16); if(p.type==='cursed'){ world.clearedCursed++; tone(240,0.08,'sawtooth',0.05); dropPowerupChance(p.x,p.y); if(world.fear>60 && Math.random()<0.35) whisper(); if(world.fear>70) { subBoom(); } }
     if(!pierce && world.ballType===POW.SKULL && world.pierce<=0){ // skull used up
       world.ballType = POW.NONE; updateHUD();
     }
   }
 
   function showFloat(text,x,y){ const div=document.createElement('div'); div.textContent=text; div.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;transform:translate(-50%,-50%);font-weight:700;color:#ff6; text-shadow:0 0 8px #a00;'; ui.appendChild(div); let t=0; const id=setInterval(()=>{ t++; div.style.top=(y- t*1.2)+'px'; div.style.opacity = 1 - t/60; if(t>60){ clearInterval(id); div.remove(); }}, 16); }
+  function showStreakPopup(count,x,y){ const div=document.createElement('div'); div.className='streak-pop'; div.textContent=count; div.style.left=x+'px'; div.style.top=y+'px'; div.style.transform='translate(-50%,-50%)'; ui.appendChild(div); let t=0; const id=setInterval(()=>{ t++; div.style.transform=`translate(-50%,-50%) translateY(${-(t*1.4)}px)`; const alpha=Math.max(0,1-t/24); div.style.opacity=alpha; if(t>=24){ clearInterval(id); div.remove(); }},16); }
 
   // ===== Input =====
   const mouse = {x: W/2, y: 60, down:false};
@@ -298,9 +484,9 @@
 
   // ===== UI Screens =====
   function setOverlay(html){ ui.innerHTML = html||''; }
-  function showBoot(){ setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="meter" style="width:320px"><i id="bootFill" style="transform:scaleX(0)"></i></div><div class="warn">Content warning: flashing lights and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE</div></div>`); }
+  function showBoot(){ setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="meter" style="width:320px"><i id="bootFill" style="transform:scaleX(0)"></i></div><div class="warn">Content warning: flashing lights and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE</div></div>`); }
   function tickBoot(){ bootProg = Math.min(100, bootProg + 1.5 + Math.random()*1.5); const fill=document.getElementById('bootFill'); const msg=document.getElementById('bootMsg'); if(fill) fill.style.transform = `scaleX(${bootProg/100})`; if(msg && bootProg>bootMsgIdx*20){ bootMsgIdx=(bootMsgIdx+1)%bootMsgs.length; msg.textContent = bootMsgs[bootMsgIdx]; } if(bootProg>=100){ startMenu(); } }
-  function startMenu(){ state=STATE.MENU; world.aim.ready=false; setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle">H⍜rr⍜r Arcade</div><button class="btn play good" id="playBtn">▶ PLAY</button><div class="warn">SPACE or Click to begin. Use the Quality menu if performance dips.</div><div class="flash">PRESS SPACE</div></div>`); document.getElementById('playBtn').onclick=()=> startGame(); }
+  function startMenu(){ state=STATE.MENU; world.aim.ready=false; setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">H⍜rr⍜r Arcade</div><button class="btn play good" id="playBtn">▶ PLAY</button><div class="warn">SPACE or Click to begin. Use the Quality menu if performance dips.</div><div class="flash">PRESS SPACE</div></div>`); document.getElementById('playBtn').onclick=()=> startGame(); }
   function startGame(){ state=STATE.PLAY; setOverlay(''); loadLevel(1); updateHUD(); world.aim.ready=true; }
   function showGameOver(){ const final = Math.floor(world.score); setOverlay(`<div class="menu"><div class="title">You Were Devoured</div><div class="subtitle">Final score: <b>${final}</b> — Level ${world.level}</div><div class="row" style="gap:8px"><button class="btn good" id="retryBtn">↺ Try Again</button><button class="btn" id="menuBtn">☰ Menu</button></div></div>`); document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); }; document.getElementById('menuBtn').onclick=()=> startMenu(); }
 
@@ -314,7 +500,20 @@
     ctx.save(); ctx.globalAlpha = 0.28 + Math.random()*0.12; for(const h of world.hallucinations){ const wob=Math.sin(h.t + Date.now()*0.008)*1.2; ctx.drawImage(Spr.cursedA, h.x-22+wob, h.y-22, 44, 44); } ctx.restore(); }
   function drawAimer(){ if(!world.aim.ready) return; const a=world.aim.ang; const p=world.aim.power; const tx=W/2+Math.cos(a)*p*5, ty=60+Math.sin(a)*p*5; ctx.save(); if(world.fear>70){ ctx.filter='contrast(140%) saturate(120%) blur(1px)'; } ctx.globalAlpha=.9; ctx.setLineDash([6,6]); ctx.lineDashOffset = - (Date.now()*0.05 % 12); ctx.beginPath(); ctx.moveTo(W/2, 60); ctx.lineTo(tx, ty); ctx.strokeStyle='#f43f5e'; ctx.lineWidth=2; ctx.stroke(); ctx.setLineDash([]); ctx.restore(); }
 
-  function updateHUD(){ ballsLabel.textContent = world.ballsLeft; scoreLabel.textContent = Math.floor(world.score); streakLabel.textContent = world.streak; cursedLabel.textContent = Math.max(0, world.totalCursed - world.clearedCursed); levelLabel.textContent = world.level; fearLabel.textContent = Math.round(world.fear)+'%'; powerLabel.textContent = world.ballType===POW.NONE? '—' : (world.ballType===POW.SKULL? `Skull (${world.pierce})` : 'Rotten'); const prog = world.totalCursed? world.clearedCursed/world.totalCursed : 0; progressFill.style.transform = `scaleX(${prog})`; }
+  function updateHUD(){
+    ballsLabel.textContent = world.ballsLeft;
+    scoreLabel.textContent = Math.floor(world.score);
+    cursedLabel.textContent = Math.max(0, world.totalCursed - world.clearedCursed);
+    levelLabel.textContent = world.level;
+    fearLabel.textContent = Math.round(world.fear)+'%';
+    if(fearFill){
+      const scale = Math.max(0, Math.min(1, world.fear/100));
+      fearFill.style.transform = `scaleX(${scale})`;
+    }
+    powerLabel.textContent = world.ballType===POW.NONE? '—' : (world.ballType===POW.SKULL? `Skull (${world.pierce})` : 'Rotten');
+    const prog = world.totalCursed? world.clearedCursed/world.totalCursed : 0;
+    progressFill.style.transform = `scaleX(${prog})`;
+  }
 
   function checkEnd(){ if(world.clearedCursed >= world.totalCursed){ sting(); const k = Math.floor(220*quality.mul); for(let i=0;i<k;i++) world.particles.push(new Particle(W/2, H-120, (Math.random()*2-1)*6, -Math.random()*5-2, 60+Math.random()*40, .8+Math.random()*0.8)); world.score += 1200 + world.ballsLeft*140; world.level++; loadLevel(world.level); } else if(world.ball?.dead){ world.ball=null; world.aim.ready=true; world.streak=0; if(world.ballsLeft<=0){ state=STATE.GAMEOVER; showGameOver(); } } }
 
