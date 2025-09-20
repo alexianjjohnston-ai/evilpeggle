@@ -275,7 +275,7 @@
   };
   const QUALITY_OPTIONS = ['Low','Med','High'];
 
-  const POW = { NONE:'none', SKULL:'skull', ROTTEN:'rotten' };
+  const POW = { NONE:'none', ASTRAL:'astral', VOLTAIC:'voltaic', GRAVEN:'graven' };
   const FEAR_STAGES = [
     { threshold: 0, label: 'Calm', className: 'fear-0' },
     { threshold: 20, label: 'Uneasy', className: 'fear-1' },
@@ -287,9 +287,10 @@
   const STREAK_MILESTONES = [2,3,5,8,12,18,25];
   let lastStreakPing = 0;
   const POW_DATA = {
-    [POW.NONE]:  { short:'—', label:'No Power', color:'#e2e8f0', desc:'Standard eyeball.' },
-    [POW.SKULL]: { short:'Skull', label:'Flaming Skull', color:'#fb7185', desc:'Pierces up to three pegs.' },
-    [POW.ROTTEN]:{ short:'Rotten', label:'Rotten Orb', color:'#bef264', desc:'Shrinks the bucket until caught.' }
+    [POW.NONE]:    { short:'—',       label:'No Power',        color:'#e2e8f0', desc:'Standard eyeball.' },
+    [POW.ASTRAL]:  { short:'Astral',  label:'Astral Prism',    color:'#c4b5fd', desc:'Phase through two pegs before rebounding.' },
+    [POW.VOLTAIC]: { short:'Volt',    label:'Voltaic Lash',    color:'#38bdf8', desc:'Chains lightning to nearby pegs on impact.' },
+    [POW.GRAVEN]:  { short:'Graven',  label:'Graven Well',     color:'#f97316', desc:'Detonate a gravity well to shatter clusters.' }
   };
 
   const MODE = { STORY:'story', FREEPLAY:'freeplay' };
@@ -750,31 +751,60 @@
     <path d='M8 40 C18 42, 14 50, 22 54' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/>
     <path d='M58 22 C46 16, 40 14, 34 12' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/>
   </svg>`);
-  // Flaming skull ball
-  Spr.skull = svgToImg(`
+  // Astral prism ball
+  Spr.astral = svgToImg(`
   <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-    <defs><radialGradient id='f' cx='50%' cy='50%' r='50%'>
-      <stop offset='0%' stop-color='#fff7d6'/>
-      <stop offset='60%' stop-color='#ffb84a'/>
-      <stop offset='100%' stop-color='#a31616'/>
-    </radialGradient></defs>
-    <circle cx='32' cy='32' r='28' fill='url(#f)'/>
-    <path d='M16 34 Q32 12 48 34' fill='#eee' stroke='#333' stroke-width='2'/>
-    <circle cx='26' cy='32' r='6' fill='#111'/>
-    <circle cx='38' cy='32' r='6' fill='#111'/>
-    <rect x='26' y='40' width='12' height='6' rx='2' fill='#111'/>
-    <path d='M12 28 C20 14, 28 10, 32 8 C36 10, 44 14, 52 28' fill='none' stroke='#ff6' stroke-width='3'/>
+    <defs>
+      <radialGradient id='astralCore' cx='50%' cy='50%' r='48%'>
+        <stop offset='0%' stop-color='#fdf4ff'/>
+        <stop offset='60%' stop-color='#c084fc'/>
+        <stop offset='100%' stop-color='#5b21b6'/>
+      </radialGradient>
+      <linearGradient id='astralRing' x1='0' y1='0' x2='1' y2='1'>
+        <stop offset='0%' stop-color='#a855f7' stop-opacity='.8'/>
+        <stop offset='100%' stop-color='#22d3ee' stop-opacity='.9'/>
+      </linearGradient>
+    </defs>
+    <circle cx='32' cy='32' r='28' fill='url(#astralCore)' stroke='#ede9fe' stroke-width='2'/>
+    <g stroke='url(#astralRing)' stroke-width='3' stroke-linecap='round' fill='none' opacity='.85'>
+      <path d='M12 30 C24 16, 40 16, 52 30'/>
+      <path d='M12 34 C24 48, 40 48, 52 34' opacity='.7'/>
+    </g>
+    <circle cx='32' cy='32' r='10' fill='#0f172a'/>
+    <circle cx='30' cy='30' r='4' fill='#f8fafc' opacity='.7'/>
   </svg>`);
-  // Rotten eyeball ball
-  Spr.rotten = svgToImg(`
+  // Voltaic lash ball
+  Spr.voltaic = svgToImg(`
   <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-    <defs><radialGradient id='r' cx='50%' cy='50%' r='50%'>
-      <stop offset='0%' stop-color='#e2ffd5'/>
-      <stop offset='100%' stop-color='#a5d08b'/>
-    </radialGradient></defs>
-    <circle cx='32' cy='32' r='30' fill='url(#r)' stroke='#6b8f54' stroke-width='2'/>
-    <circle cx='32' cy='32' r='16' fill='#396b2c'/>
-    <circle cx='31' cy='31' r='7' fill='#071a05'/>
+    <defs>
+      <radialGradient id='voltCore' cx='50%' cy='48%' r='52%'>
+        <stop offset='0%' stop-color='#eff6ff'/>
+        <stop offset='70%' stop-color='#38bdf8'/>
+        <stop offset='100%' stop-color='#0f172a'/>
+      </radialGradient>
+    </defs>
+    <circle cx='32' cy='32' r='29' fill='url(#voltCore)' stroke='#0ea5e9' stroke-width='2'/>
+    <g stroke='#facc15' stroke-width='2.4' stroke-linecap='round' fill='none' opacity='.9'>
+      <path d='M16 18 L24 26 L20 34 L28 40 L24 48'/>
+      <path d='M36 16 L44 24 L40 32 L48 38 L42 46' opacity='.7'/>
+    </g>
+    <circle cx='32' cy='32' r='9' fill='#020617'/>
+    <circle cx='30' cy='30' r='3' fill='#f8fafc' opacity='.75'/>
+  </svg>`);
+  // Graven well ball
+  Spr.graven = svgToImg(`
+  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
+    <defs>
+      <radialGradient id='gravCore' cx='50%' cy='50%' r='52%'>
+        <stop offset='0%' stop-color='#fff7ed'/>
+        <stop offset='55%' stop-color='#fb923c'/>
+        <stop offset='100%' stop-color='#7c2d12'/>
+      </radialGradient>
+    </defs>
+    <circle cx='32' cy='32' r='30' fill='url(#gravCore)' stroke='#fdba74' stroke-width='2'/>
+    <circle cx='32' cy='32' r='18' fill='none' stroke='#fb923c' stroke-width='3' stroke-dasharray='8 6' opacity='.8'/>
+    <circle cx='32' cy='32' r='9' fill='#1b0f05'/>
+    <circle cx='30' cy='30' r='3' fill='#fde68a' opacity='.7'/>
   </svg>`);
   // Cursed face peg (two frames: open/closed mouth)
   Spr.cursedA = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><radialGradient id='r' cx='50%' cy='40%' r='60%'><stop offset='0%' stop-color='#ff647c'/><stop offset='60%' stop-color='#d2122e'/><stop offset='100%' stop-color='#6b0814'/></radialGradient></defs><circle cx='24' cy='24' r='22' fill='url(#r)' stroke='#2b0007' stroke-width='2'/><ellipse cx='16' cy='20' rx='6' ry='5' fill='#1a0010'/><ellipse cx='32' cy='20' rx='6' ry='5' fill='#1a0010'/><path d='M12 30 Q24 38 36 30' stroke='#1a0010' stroke-width='4' fill='none'/></svg>`);
@@ -888,17 +918,17 @@
     'Tip: Cursed reds fuel the fear meter. Clear them early to avoid panic mode later.',
     'Reminder: Catching the bucket refunds a ball and pumps your streak. Don\'t snub that bucket beast.',
     'Did you know? Steel pegs only bounce—bring power-ups or angle tricks to slip past.',
-    'Backstage gossip: The Rotten Orb shrinks the bucket, but a perfect catch restores it.',
+    'Backstage gossip: Astral Prism lets you ghost through pegs — save it for tight clusters.',
     'Joke: Why did the eyeball join the band? It had perfect pitch and zero stage fright.',
     'Trick: Bank shots off the arena walls to reach tucked-away reds without wasting height.',
     'Lore: Fear whispers get louder after 60%. Maybe listen… or maybe aim faster.',
-    'Pro move: Rotate kicks either follow the wave layout or break it. Find the seams and spam streaks.'
+    'Pro move: Voltaic Lash loves crowds — bounce into packed spirals to clear lanes fast.'
   ];
   const MENU_HINTS = [
     "Catch the bucket beast to earn another shot.",
     "Steel pegs just bounce — bring powers to break the rhythm.",
     "Fear climbs faster with streaks. High fear changes everything.",
-    "Flaming Skull pierces three pegs. Rotten orbs shrink the bucket.",
+    "Astral Prism phases through tight clusters — save it for endgame shots.",
     "Press ESC anytime for settings, blood toggle, or a reset."
   ];
   const TUTORIAL_STEPS = [
@@ -918,6 +948,7 @@
   }
 
   const world = {
+    baseGravity: 0.34,
     gravity: 0.34,
     friction: 0.995,
     ballsLeft: 10,
@@ -927,6 +958,9 @@
     ball: null,
     ballType: POW.NONE,
     pierce: 0,
+    chainCharges: 0,
+    gravenTimer: 0,
+    gravenReady: false,
     pegs: [],
     hallucinations: [],
     decals: [],
@@ -1344,7 +1378,10 @@
     world.totalCursed = world.pegs.filter(p=>p.type==='cursed').length;
     world.score = 0;
     world.clearedCursed = 0; world.ball=null; world.aim.ready=true; world.ballsLeft = Math.max(6, 12 - i);
-    world.streak=0; lastStreakPing=0; world.fear = 0; world.ballType=POW.NONE; world.pierce=0; world.hallucinations=[];
+    world.streak=0; lastStreakPing=0; world.fear = 0; world.ballType=POW.NONE;
+    world.pierce=0; world.chainCharges=0; world.gravenTimer=0; world.gravenReady=false;
+    world.gravity = world.baseGravity;
+    world.hallucinations=[];
     wipeScene();
     world.levelBaselineScore = 0;
     if(i===1 && settings.showTutorial && !tutorialShown){ scheduleTutorial(); }
@@ -1401,12 +1438,17 @@
   class Ball{
     constructor(x,y,vx,vy){ this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.r=14; this.dead=false; }
     step(){ this.vy += world.gravity; this.vx *= world.friction; this.vy *= world.friction; this.x += this.vx; this.y += this.vy; if(this.x < this.r){ this.x=this.r; this.vx*=-1; } if(this.x > W-this.r){ this.x=W-this.r; this.vx*=-1; } if(this.y < this.r){ this.y=this.r; this.vy*=-1; } if(this.y > H-this.r){ this.y = H-this.r; this.vy *= -0.45; this.vx *= 0.96; if(Math.abs(this.vy)<3.5) this.dead=true; } this.collidePegs(); this.collideBucket(); }
-    collidePegs(){ for(const p of world.pegs){ if(p.hit) continue; const dx=this.x-p.x, dy=this.y-p.y; const d=Math.hypot(dx,dy); if(d < this.r + p.r){ const nx=dx/d, ny=dy/d; const vdot = this.vx*nx + this.vy*ny; // if skull, pierce through N pegs before bouncing
-          if(world.ballType===POW.SKULL && world.pierce>0){ world.pierce--; hitPeg(p,true); continue; }
+    collidePegs(){ for(const p of world.pegs){ if(p.hit) continue; const dx=this.x-p.x, dy=this.y-p.y; const d=Math.hypot(dx,dy); if(d < this.r + p.r){ const nx=dx/d, ny=dy/d; const vdot = this.vx*nx + this.vy*ny; // Astral Prism lets the orb drift through a few pegs before bouncing
+          if(world.ballType===POW.ASTRAL && world.pierce>0){ world.pierce--; hitPeg(p,true); continue; }
           this.vx -= 2*vdot*nx; this.vy -= 2*vdot*ny; this.x = p.x + (this.r+p.r+0.2)*nx; this.y = p.y + (this.r+p.r+0.2)*ny; hitPeg(p,false); } } }
-    collideBucket(){ const b=world.bucket; if(this.y + this.r >= b.y && this.y - this.r <= b.y + b.h && this.x > b.x && this.x < b.x + b.w && this.vy>0){ this.dead=true; world.ballsLeft++; world.streak+=3; announceStreak(world.streak); world.score += 300 * (1 + Math.min(10, world.streak*0.2)); screenShake(10); tone(880,0.08,'triangle',0.05); if(settings.bloodEnabled){ sprayBlood(this.x, this.y, 0.8); } else { spawnSpectralMist(this.x, this.y, 1.4); } b.open=false; b.anim=12; if(world.ballType===POW.ROTTEN){ // restore bucket size
-          b.w = 140; } } }
-    draw(){ const img = world.ballType===POW.SKULL? Spr.skull : world.ballType===POW.ROTTEN? Spr.rotten : Spr.ball; ctx.drawImage(img, this.x-20, this.y-20, 40, 40); }
+    collideBucket(){ const b=world.bucket; if(this.y + this.r >= b.y && this.y - this.r <= b.y + b.h && this.x > b.x && this.x < b.x + b.w && this.vy>0){ this.dead=true; world.ballsLeft++; world.streak+=3; announceStreak(world.streak); world.score += 300 * (1 + Math.min(10, world.streak*0.2)); screenShake(10); tone(880,0.08,'triangle',0.05); if(settings.bloodEnabled){ sprayBlood(this.x, this.y, 0.8); } else { spawnSpectralMist(this.x, this.y, 1.4); } b.open=false; b.anim=12; } }
+    draw(){
+      const img = world.ballType===POW.ASTRAL? Spr.astral
+        : world.ballType===POW.VOLTAIC? Spr.voltaic
+        : world.ballType===POW.GRAVEN? Spr.graven
+        : Spr.ball;
+      ctx.drawImage(img, this.x-20, this.y-20, 40, 40);
+    }
   }
 
   class Particle{
@@ -1488,14 +1530,115 @@
   function addDecal(x,y){ if(!settings.bloodEnabled) return; world.decals.push({x,y, s: (24+Math.random()*36)*quality.mul, rot: Math.random()*Math.PI}); if(world.decals.length>Math.floor(240*quality.mul)) world.decals.shift(); }
 
   // ===== Effects & Hits =====
-  function dropPowerupChance(px, py){ if(Math.random()<0.2){ // 20% on cursed hits
-      const type = Math.random()<0.5? POW.SKULL : POW.ROTTEN; const pow = POW_DATA[type]; showFloat(`Power: ${pow.label}`, px, py, { color:pow.color, glow:'#38bdf8', fontSize:18, duration:90, rise:1 }); world.ballType = type; if(type===POW.SKULL){ world.pierce = 3; } else if(type===POW.ROTTEN){ world.bucket.w = Math.max(80, world.bucket.w*0.6); }
-      updateHUD();
-    } }
+  function applyPowerup(type, px, py){
+    const pow = POW_DATA[type] || POW_DATA[POW.NONE];
+    world.ballType = type;
+    world.pierce = 0;
+    world.chainCharges = 0;
+    world.gravenReady = false;
+    world.gravenTimer = 0;
+    if(type===POW.ASTRAL){
+      world.pierce = 2;
+      tone(760,0.08,'sine',0.04);
+    } else if(type===POW.VOLTAIC){
+      world.chainCharges = 3;
+      tone(520,0.06,'sawtooth',0.05);
+    } else if(type===POW.GRAVEN){
+      world.gravenReady = true;
+      tone(320,0.12,'triangle',0.05);
+    }
+    showFloat(`Power: ${pow.label}`, px, py, { color:pow.color, glow:'#f472b6', fontSize:18, duration:90, rise:1 });
+    updateHUD();
+  }
 
-  function hitPeg(p, pierce){ if(p.type==='steel'){ noise(90,.18); screenShake(3); world.streak=0; lastStreakPing=0; world.score+=5; return; } p.hit = true; world.streak++; announceStreak(world.streak); world.score += 60 + world.streak*12; noise(120,.22); screenShake(6); world.fear = Math.min(100, world.fear + 1 + Math.random()*1.8); maybeTriggerJumpscare(); const scale = p.type==='cursed'? 1.25 : 1; if(settings.bloodEnabled){ sprayBlood(p.x, p.y, scale); if(p.type==='cursed') spawnSpectralMist(p.x, p.y, 0.6); } else { spawnSpectralMist(p.x, p.y, scale); } if(p.type==='cursed'){ world.clearedCursed++; tone(240,0.08,'sawtooth',0.05); dropPowerupChance(p.x,p.y); if(settings.fearEffects){ if(world.fear>60 && Math.random()<0.35) whisper(); if(world.fear>70) { subBoom(); } } }
-    if(!pierce && world.ballType===POW.SKULL && world.pierce<=0){ // skull used up
-      world.ballType = POW.NONE; updateHUD();
+  function triggerVoltaicChain(sourcePeg){
+    const radius = 150;
+    const candidates = [];
+    for(const peg of world.pegs){
+      if(peg===sourcePeg || peg.hit) continue;
+      const dist = Math.hypot(peg.x - sourcePeg.x, peg.y - sourcePeg.y);
+      if(dist <= radius) candidates.push({ peg, dist });
+    }
+    if(!candidates.length) return;
+    candidates.sort((a,b)=>{
+      const cursedDiff = (b.peg.type==='cursed') - (a.peg.type==='cursed');
+      if(cursedDiff!==0) return cursedDiff;
+      return a.dist - b.dist;
+    });
+    const arcs = candidates.slice(0, Math.min(2, world.chainCharges));
+    if(!arcs.length) return;
+    noise(160,.18);
+    screenShake(5);
+    arcs.forEach(({ peg })=>{
+      spawnSpectralMist(peg.x, peg.y, 0.6);
+      hitPeg(peg, true, true);
+    });
+  }
+
+  function triggerGravenWell(x, y){
+    const radius = 140;
+    noise(220,.24);
+    screenShake(10);
+    spawnSpectralMist(x, y, 2);
+    const affected = [];
+    for(const peg of world.pegs){
+      if(peg.hit) continue;
+      if(Math.hypot(peg.x - x, peg.y - y) <= radius){
+        affected.push(peg);
+      }
+    }
+    affected.forEach(peg => hitPeg(peg, true, true));
+  }
+
+  function dropPowerupChance(px, py){
+    const baseChance = 0.12; // modest drop rate per cursed peg
+    if(Math.random()>=baseChance) return;
+    const roll = Math.random();
+    const type = roll < 0.5 ? POW.ASTRAL : roll < 0.85 ? POW.VOLTAIC : POW.GRAVEN;
+    applyPowerup(type, px, py);
+  }
+
+  function hitPeg(p, pierce, fromChain=false){
+    if(p.type==='steel'){ noise(90,.18); screenShake(3); world.streak=0; lastStreakPing=0; world.score+=5; return; }
+    p.hit = true;
+    world.streak++;
+    announceStreak(world.streak);
+    world.score += 60 + world.streak*12;
+    noise(120,.22);
+    screenShake(6);
+    world.fear = Math.min(100, world.fear + 1 + Math.random()*1.8);
+    maybeTriggerJumpscare();
+    const scale = p.type==='cursed'? 1.25 : 1;
+    if(settings.bloodEnabled){
+      sprayBlood(p.x, p.y, scale);
+      if(p.type==='cursed') spawnSpectralMist(p.x, p.y, 0.6);
+    } else {
+      spawnSpectralMist(p.x, p.y, scale);
+    }
+    if(p.type==='cursed'){
+      world.clearedCursed++;
+      tone(240,0.08,'sawtooth',0.05);
+      dropPowerupChance(p.x,p.y);
+      if(settings.fearEffects){ if(world.fear>60 && Math.random()<0.35) whisper(); if(world.fear>70) { subBoom(); } }
+    }
+
+    if(!fromChain && world.ballType===POW.VOLTAIC){
+      triggerVoltaicChain(p);
+      world.chainCharges = Math.max(0, world.chainCharges-1);
+      if(world.chainCharges<=0){ world.ballType = POW.NONE; updateHUD(); }
+    }
+
+    if(!fromChain && world.ballType===POW.GRAVEN && world.gravenReady && (p.type==='cursed' || p.type==='normal')){
+      triggerGravenWell(p.x, p.y);
+      world.gravenReady = false;
+      world.ballType = POW.NONE;
+      world.gravenTimer = 240;
+      updateHUD();
+    }
+
+    if(!pierce && world.ballType===POW.ASTRAL && world.pierce<=0){
+      world.ballType = POW.NONE;
+      updateHUD();
     }
   }
 
@@ -1974,7 +2117,10 @@
   function drawAimer(){
     if(!world.aim.ready) return;
     const a=world.aim.ang; const p=world.aim.power; const tx=W/2+Math.cos(a)*p*5, ty=60+Math.sin(a)*p*5;
-    const readyImg = world.ballType===POW.SKULL? Spr.skull : world.ballType===POW.ROTTEN? Spr.rotten : Spr.ball;
+    const readyImg = world.ballType===POW.ASTRAL? Spr.astral
+      : world.ballType===POW.VOLTAIC? Spr.voltaic
+      : world.ballType===POW.GRAVEN? Spr.graven
+      : Spr.ball;
     ctx.save();
     ctx.globalAlpha = 0.95;
     ctx.drawImage(readyImg, W/2-20, 36, 40, 40);
@@ -2029,7 +2175,10 @@
     setFearStage(getFearStage(fearPct));
     const powMeta = POW_DATA[world.ballType] || POW_DATA[POW.NONE];
     let powerText = powMeta.short;
-    if(world.ballType===POW.SKULL){ powerText += ` ×${world.pierce}`; }
+    if(world.ballType===POW.ASTRAL){ powerText += ` ×${Math.max(0, world.pierce)}`; }
+    else if(world.ballType===POW.VOLTAIC){ powerText += ` ⚡${Math.max(0, world.chainCharges)}`; }
+    else if(world.ballType===POW.GRAVEN){ powerText += world.gravenReady ? ' Ready' : '';
+    }
     if(powerLabel){
       powerLabel.textContent = powerText;
       powerLabel.style.color = powMeta.color;
