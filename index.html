@@ -2,13 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Nightmare Peggle — Ultimate One-File Edition</title>
   <style>
+    :root{
+      --game-w: 960px;
+      --game-h: 640px;
+    }
     html,body{height:100%}
-    body{margin:0;background:#07070a;color:#ececf1;font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial}
-    .wrap{display:grid;grid-template-rows:auto 1fr auto; height:100%}
-    header{display:flex;align-items:center;gap:.75rem;padding:.5rem 1rem;background:linear-gradient(180deg,#141418, #0b0b0e);border-bottom:1px solid #1a1a1f;position:sticky;top:0;z-index:10}
+    body{
+      margin:0;
+      background:#07070a;
+      color:#ececf1;
+      font:14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial;
+    }
+    .wrap{display:grid;grid-template-rows:auto 1fr; height:100%}
+    header{
+      display:flex;align-items:center;gap:.75rem;padding:.5rem 1rem;
+      background:linear-gradient(180deg,#141418, #0b0b0e);
+      border-bottom:1px solid #1a1a1f;position:sticky;top:0;z-index:10
+    }
     header h1{font-size:12px;margin:0;letter-spacing:.14em;text-transform:uppercase;opacity:.9}
     header .sp{flex:1}
     .btn, select{cursor:pointer;user-select:none;border:1px solid #2a2a33;background:#121218;border-radius:10px;padding:.45rem .7rem;display:inline-flex;align-items:center;gap:.5rem;color:#eaeaf0}
@@ -16,21 +29,26 @@
     .danger{border-color:#3a1820;background:#17060a;color:#fecaca}
     .good{border-color:#1d3a26;background:#06140a;color:#bbf7d0}
     .row{display:flex;align-items:center;gap:.5rem}
+
     main{display:grid;place-items:center;padding:.5rem}
 
-    /* CRT look */
-    /*test*/
-    .crt{position:relative; transform-origin: top left;}
-    .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background: repeating-linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.035) 1px, transparent 1px, transparent 3px)}
+    /* CRT look + scale container */
+    .crt{
+      position:relative; width:var(--game-w); height:var(--game-h);
+      transform-origin: top left;
+    }
+    .crt:before{content:"";position:absolute;inset:0;pointer-events:none;
+      background: repeating-linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.035) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 160px rgba(0,0,0,.75)}
 
-    canvas{background:#0a0a0c;border:1px solid #1b1b1f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
-    footer{display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;border-top:1px solid #17171a;background:linear-gradient(180deg,#0a0a0c,#070708)}
-    .meter{height:8px;border-radius:999px;background:#111214;border:1px solid #222;position:relative;overflow:hidden;width:260px}
-    .meter>i{position:absolute;inset:0;background:linear-gradient(90deg, #e11d48, #f43f5e, #e11d48);transform-origin:left center;}
-    .hud{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-    .badge{padding:.25rem .5rem;border:1px solid #24242a;border-radius:8px;background:#0f0f12}
+    canvas{
+      width:var(--game-w); height:var(--game-h);
+      background:#0a0a0c;border:1px solid #1b1b1f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.7)
+    }
+
     .overlay{position:absolute;inset:0;display:grid;place-items:center;color:#e5e7eb;pointer-events:none}
+
+    /* Menu */
     .menu{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(10,10,12,.72);backdrop-filter:blur(6px);padding:28px;border:1px solid #222;border-radius:14px;text-align:center}
     .title{font:800 46px/1.05 "Cinzel", Trajan, serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;text-shadow:0 0 18px #a00}
     .subtitle{opacity:.9}
@@ -38,12 +56,11 @@
     .flash{animation:flash 1.6s infinite}
     @keyframes flash{0%,60%{opacity:.25} 70%{opacity:.7} 100%{opacity:.25}}
 
-    /* Fancy score HUD (top-right) */
+    /* Top HUD (right) */
     .scoreHUD{
-      position:absolute; right:14px; top:14px; pointer-events:none;
+      position:absolute; right:14px; top:18px; pointer-events:none;
       display:flex; flex-direction:column; gap:8px; align-items:flex-end;
-      filter: drop-shadow(0 6px 20px rgba(0,0,0,.5));
-      z-index:2;
+      filter: drop-shadow(0 6px 20px rgba(0,0,0,.5)); z-index:3;
     }
     .scoreRow{ display:flex; gap:10px; align-items:flex-start }
     .scoreBig{
@@ -59,14 +76,42 @@
       font-weight:600; background:#0f0f12; color:#e6e6ec; opacity:.95;
       border:1px solid #24242a; border-radius:999px; padding:4px 10px;
     }
-    .fearBar{
-      width:240px; height:8px; border-radius:999px; overflow:hidden;
-      border:1px solid #27272f; background:#0f0f12;
+
+    /* Fear bar – TOP of game (thin) */
+    .fearTop{
+      position:absolute; left:50%; top:8px; transform:translateX(-50%);
+      width:66%; max-width:720px; height:8px; border-radius:999px; overflow:hidden;
+      border:1px solid #27272f; background:#0f0f12; z-index:4; pointer-events:none;
     }
-    .fearBar>i{
+    .fearTop>i{
       position:absolute; height:8px; width:100%;
       background:linear-gradient(90deg,#f87171,#ef4444,#991b1b);
-      transform-origin:left center;
+      transform-origin:left center; transform:scaleX(0);
+    }
+
+    /* Progress bar – BOTTOM of game (thin, unobtrusive) */
+    .progressBottom{
+      position:absolute; left:50%; bottom:10px; transform:translateX(-50%);
+      width:66%; max-width:720px; height:6px; border-radius:999px; overflow:hidden;
+      border:1px solid #202026; background:#0c0c10; z-index:4; pointer-events:none;
+    }
+    .progressBottom>i{
+      position:absolute; height:6px; width:100%;
+      background:linear-gradient(90deg,#22c55e,#16a34a,#065f46);
+      transform-origin:left center; transform:scaleX(0);
+    }
+
+    @media (max-width: 820px){
+      header{gap:.5rem}
+      .scoreBig{font-size:32px;padding:6px 10px}
+      .pill{padding:3px 8px}
+      .fearTop{width:84%}
+      .progressBottom{width:84%}
+    }
+    @media (max-width: 480px){
+      .scoreBig{font-size:26px}
+      .pill{font-size:12px}
+      .title{font-size:38px}
     }
   </style>
 </head>
@@ -74,7 +119,7 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Nightmare Peggle — Ultimate One-File</h1>
+      <h1>Nightmare Peggle — One-File</h1>
       <div class="sp"></div>
       <div class="row">
         <label>Quality <select id="quality"><option>Low</option><option selected>Med</option><option>High</option></select></label>
@@ -86,11 +131,14 @@
     </header>
 
     <main>
-      <div class="crt">
+      <div class="crt" id="crt">
         <canvas id="game" width="960" height="640"></canvas>
 
-        <!-- Pretty HUD (top-right) -->
-        <div class="scoreHUD" id="scoreHUD">
+        <!-- Fear bar (top of game, thin) -->
+        <div class="fearTop"><i id="fearFill"></i></div>
+
+        <!-- Fancy HUD (top-right) -->
+        <div class="scoreHUD">
           <div class="scoreRow">
             <div class="scoreBig" id="scoreBig">0</div>
             <div class="subCol">
@@ -99,29 +147,14 @@
               <div class="pill">Streak <b id="streakPill">0</b></div>
             </div>
           </div>
-          <div class="fearBar" title="Fear">
-            <i id="fearFill" style="transform:scaleX(0)"></i>
-          </div>
         </div>
+
+        <!-- Progress bar (bottom of game, thin) -->
+        <div class="progressBottom"><i id="progressFill"></i></div>
 
         <div class="overlay" id="uiOverlay"></div>
       </div>
     </main>
-
-    <footer>
-      <div class="hud">
-        <span class="badge">Level: <b id="levelLabel">1</b></span>
-        <span class="badge">Balls: <b id="ballsLabel">10</b></span>
-        <span class="badge">Cursed left: <b id="cursedLabel">—</b></span>
-        <span class="badge">Score: <b id="scoreLabel">0</b></span>
-        <span class="badge">Streak: <b id="streakLabel">0</b></span>
-        <span class="badge">Fear: <b id="fearLabel">0%</b></span>
-        <span class="badge">Power: <b id="powerLabel">—</b></span>
-      </div>
-      <div class="meter" title="Progress to next level">
-        <i id="progressFill" style="transform:scaleX(0)"></i>
-      </div>
-    </footer>
   </div>
 
 <script>
@@ -131,24 +164,15 @@
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const ui = document.getElementById('uiOverlay');
-  const crt = document.querySelector('.crt');
+  const crt = document.getElementById('crt');
 
-  // ===== HUD refs =====
-  const ballsLabel = document.getElementById('ballsLabel');
-  const scoreLabel = document.getElementById('scoreLabel');
-  const streakLabel = document.getElementById('streakLabel');
-  const cursedLabel = document.getElementById('cursedLabel');
-  const levelLabel  = document.getElementById('levelLabel');
-  const fearLabel   = document.getElementById('fearLabel');
-  const powerLabel  = document.getElementById('powerLabel');
-  const progressFill= document.getElementById('progressFill');
-
-  // Fancy HUD refs
+  // ===== Fancy HUD refs only (footer removed) =====
   const scoreBig   = document.getElementById('scoreBig');
   const levelPill  = document.getElementById('levelPill');
   const ballsPill  = document.getElementById('ballsPill');
   const streakPill = document.getElementById('streakPill');
   const fearFill   = document.getElementById('fearFill');
+  const progressFill= document.getElementById('progressFill');
   const fmt = new Intl.NumberFormat('en-US');
   let displayScore = 0;
 
@@ -160,7 +184,7 @@
   const qualitySel = document.getElementById('quality');
 
   helpBtn.onclick = () => alert(`How to play:
-• Move mouse to aim. Click to fire.
+• Move mouse (or drag) to aim. Click/Tap to fire.
 • Clear ALL red cursed pegs to win.
 • Catch the eyeball in the bucket-monster for +1 ball.
 • Steel pegs bounce only.
@@ -176,108 +200,31 @@
   // ===== Audio (procedural) =====
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   let ac; let audioEnabled = true;
-  function ensureAudio(){ if(!ac){ ac = new AudioCtx(); startMusic(); }}
+  function ensureAudio(){ if(!ac){ ac = new AudioCtx({latencyHint:'interactive'}); startMusic(); }}
   function tone(freq=200, dur=0.06, type='square', gain=0.02){ if(!audioEnabled) return; ensureAudio(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); }
   function noise(ms=100, vol=.12){ if(!audioEnabled) return; ensureAudio(); const n=ac.createBuffer(1, ac.sampleRate*ms/1000, ac.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=vol; s.connect(g); g.connect(ac.destination); s.start(); }
   function sting(){ if(!audioEnabled) return; ensureAudio(); const g=ac.createGain(); g.gain.value=.05; g.connect(ac.destination); [110, 147, 196, 277].forEach((f,i)=>{ const o=ac.createOscillator(); o.type='sawtooth'; o.frequency.value=f; o.connect(g); o.start(); o.stop(ac.currentTime+0.5+i*0.02)}); }
   function subBoom(){ if(!audioEnabled) return; ensureAudio(); const o=ac.createOscillator(); const g=ac.createGain(); o.type='sine'; o.frequency.setValueAtTime(160, ac.currentTime); o.frequency.exponentialRampToValueAtTime(40, ac.currentTime+0.6); g.gain.value=.06; o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+0.65); }
-
-  // Dissonant loop (detuned organ)
   let musicNode; function startMusic(){ if(!audioEnabled) return; if(musicNode){ try{musicNode.stop();}catch{}} ensureAudio(); const g=ac.createGain(); g.gain.value=.03; g.connect(ac.destination); const freqs=[196, 247, 330]; const detunes=[-8, 0, +7]; const oscs=[]; for(let i=0;i<freqs.length;i++){ const o=ac.createOscillator(); o.type='triangle'; o.frequency.value=freqs[i]; o.detune.value=detunes[i]; o.connect(g); o.start(); oscs.push(o);} setInterval(()=>{ if(!ac) return; g.gain.value = .02 + Math.random()*0.015; }, 1200); musicNode = { stop(){ oscs.forEach(o=>o.stop()); } }; }
-
-  // Whispers (procedural hiss + formant-ish tone)
   function whisper(){ if(!audioEnabled) return; ensureAudio(); const dur=0.9; const n=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*0.4*(1-t); } const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=.03; s.connect(g); g.connect(ac.destination); s.start(); }
-
-  // Short hiss burst (for glitch bars)
-  function hissBurst(ms=110, vol=.06){
-    if(!audioEnabled) return; ensureAudio();
-    const n = ac.createBuffer(1, ac.sampleRate*ms/1000, ac.sampleRate);
-    const d = n.getChannelData(0);
-    for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*(0.9 - t*0.9); }
-    const s=ac.createBufferSource(); s.buffer=n;
-    const g=ac.createGain(); g.gain.value=vol;
-    s.connect(g); g.connect(ac.destination); s.start();
-  }
-
+  function hissBurst(ms=110, vol=.06){ if(!audioEnabled) return; ensureAudio(); const n = ac.createBuffer(1, ac.sampleRate*ms/1000, ac.sampleRate); const d = n.getChannelData(0); for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*(0.9 - t*0.9);} const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=vol; s.connect(g); g.connect(ac.destination); s.start(); }
   muteBtn.onclick = () => { audioEnabled=!audioEnabled; muteBtn.textContent = audioEnabled? '🔊 Audio':'🔇 Muted'; if(audioEnabled){ ensureAudio(); tone(720,0.06,'sine',0.03);} };
 
-  // ===== Sprites (embedded SVG -> Image) =====
+  // ===== Sprites =====
   const Spr = {};
   function svgToImg(svg){ const img=new Image(); img.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg.trim()); return img; }
-
-  // Eyeball ball sprite (normal)
-  Spr.ball = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-    <defs><radialGradient id='g1' cx='50%' cy='50%' r='50%'>
-      <stop offset='0%' stop-color='#fff'/><stop offset='100%' stop-color='#ddd'/>
-    </radialGradient></defs>
-    <circle cx='32' cy='32' r='30' fill='url(#g1)' stroke='#c9c9c9' stroke-width='2'/>
-    <circle cx='32' cy='32' r='18' fill='#8b1226'/>
-    <circle cx='30' cy='31' r='9' fill='#050508'/>
-    <circle cx='28' cy='29' r='3' fill='#9e9eff' opacity='.5'/>
-    <path d='M6 20 C14 18, 20 14, 26 12' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/>
-    <path d='M8 40 C18 42, 14 50, 22 54' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/>
-    <path d='M58 22 C46 16, 40 14, 34 12' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/>
-  </svg>`);
-
-  // Flaming skull ball
-  Spr.skull = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-    <defs><radialGradient id='f' cx='50%' cy='50%' r='50%'>
-      <stop offset='0%' stop-color='#fff7d6'/><stop offset='60%' stop-color='#ffb84a'/><stop offset='100%' stop-color='#a31616'/>
-    </radialGradient></defs>
-    <circle cx='32' cy='32' r='28' fill='url(#f)'/>
-    <path d='M16 34 Q32 12 48 34' fill='#eee' stroke='#333' stroke-width='2'/>
-    <circle cx='26' cy='32' r='6' fill='#111'/><circle cx='38' cy='32' r='6' fill='#111'/>
-    <rect x='26' y='40' width='12' height='6' rx='2' fill='#111'/>
-    <path d='M12 28 C20 14, 28 10, 32 8 C36 10, 44 14, 52 28' fill='none' stroke='#ff6' stroke-width='3'/>
-  </svg>`);
-
-  // Rotten eyeball ball
-  Spr.rotten = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'>
-    <defs><radialGradient id='r' cx='50%' cy='50%' r='50%'>
-      <stop offset='0%' stop-color='#e2ffd5'/><stop offset='100%' stop-color='#a5d08b'/>
-    </radialGradient></defs>
-    <circle cx='32' cy='32' r='30' fill='url(#r)' stroke='#6b8f54' stroke-width='2'/>
-    <circle cx='32' cy='32' r='16' fill='#396b2c'/><circle cx='31' cy='31' r='7' fill='#071a05'/>
-  </svg>`);
-
-  // Cursed face pegs
+  Spr.ball = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><defs><radialGradient id='g1' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='#fff'/><stop offset='100%' stop-color='#ddd'/></radialGradient></defs><circle cx='32' cy='32' r='30' fill='url(#g1)' stroke='#c9c9c9' stroke-width='2'/><circle cx='32' cy='32' r='18' fill='#8b1226'/><circle cx='30' cy='31' r='9' fill='#050508'/><circle cx='28' cy='29' r='3' fill='#9e9eff' opacity='.5'/><path d='M6 20 C14 18, 20 14, 26 12' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/><path d='M8 40 C18 42, 14 50, 22 54' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/><path d='M58 22 C46 16, 40 14, 34 12' stroke='#e33' stroke-width='2' fill='none' opacity='.6'/></svg>`);
+  Spr.skull = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><defs><radialGradient id='f' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='#fff7d6'/><stop offset='60%' stop-color='#ffb84a'/><stop offset='100%' stop-color='#a31616'/></radialGradient></defs><circle cx='32' cy='32' r='28' fill='url(#f)'/><path d='M16 34 Q32 12 48 34' fill='#eee' stroke='#333' stroke-width='2'/><circle cx='26' cy='32' r='6' fill='#111'/><circle cx='38' cy='32' r='6' fill='#111'/><rect x='26' y='40' width='12' height='6' rx='2' fill='#111'/><path d='M12 28 C20 14, 28 10, 32 8 C36 10, 44 14, 52 28' fill='none' stroke='#ff6' stroke-width='3'/></svg>`);
+  Spr.rotten = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><defs><radialGradient id='r' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='#e2ffd5'/><stop offset='100%' stop-color='#a5d08b'/></radialGradient></defs><circle cx='32' cy='32' r='30' fill='url(#r)' stroke='#6b8f54' stroke-width='2'/><circle cx='32' cy='32' r='16' fill='#396b2c'/><circle cx='31' cy='31' r='7' fill='#071a05'/></svg>`);
   Spr.cursedA = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><radialGradient id='r' cx='50%' cy='40%' r='60%'><stop offset='0%' stop-color='#ff647c'/><stop offset='60%' stop-color='#d2122e'/><stop offset='100%' stop-color='#6b0814'/></radialGradient></defs><circle cx='24' cy='24' r='22' fill='url(#r)' stroke='#2b0007' stroke-width='2'/><ellipse cx='16' cy='20' rx='6' ry='5' fill='#1a0010'/><ellipse cx='32' cy='20' rx='6' ry='5' fill='#1a0010'/><path d='M12 30 Q24 38 36 30' stroke='#1a0010' stroke-width='4' fill='none'/></svg>`);
   Spr.cursedB = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'><defs><radialGradient id='r' cx='50%' cy='40%' r='60%'><stop offset='0%' stop-color='#ff647c'/><stop offset='60%' stop-color='#d2122e'/><stop offset='100%' stop-color='#6b0814'/></radialGradient></defs><circle cx='24' cy='24' r='22' fill='url(#r)' stroke='#2b0007' stroke-width='2'/><ellipse cx='16' cy='20' rx='6' ry='5' fill='#1a0010'/><ellipse cx='32' cy='20' rx='6' ry='5' fill='#1a0010'/><path d='M12 30 Q24 28 36 30' stroke='#1a0010' stroke-width='5' fill='none'/></svg>`);
-  // Normal meat & steel pegs
   Spr.meat = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><defs><radialGradient id='m' cx='50%' cy='45%' r='65%'><stop offset='0%' stop-color='#ffb3c2'/><stop offset='70%' stop-color='#a11428'/><stop offset='100%' stop-color='#47020a'/></radialGradient></defs><circle cx='22' cy='22' r='20' fill='url(#m)' stroke='#36010a' stroke-width='2'/><path d='M8 18 Q22 12 36 18' stroke='#5b0210' stroke-width='2' fill='none' opacity='.6'/></svg>`);
   Spr.steel = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'><defs><radialGradient id='s' cx='35%' cy='35%' r='70%'><stop offset='0%' stop-color='#fafafa'/><stop offset='70%' stop-color='#8f949c'/><stop offset='100%' stop-color='#3c4046'/></radialGradient></defs><circle cx='22' cy='22' r='19' fill='url(#s)' stroke='#24262a' stroke-width='2'/><circle cx='22' cy='22' r='5' fill='#1a1c1f'/></svg>`);
-  // Blood splat sprite
   Spr.splat = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><g fill='#6f0011'><path d='M32 10c-8 0-13 6-13 11s4 9 13 9 16-4 16-9-8-11-16-11z'/><circle cx='12' cy='20' r='5'/><circle cx='20' cy='44' r='6'/><circle cx='48' cy='36' r='7'/><circle cx='40' cy='54' r='4'/></g></svg>`);
-  // Background wallpaper
   Spr.bg = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='960' height='640' viewBox='0 0 960 640'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='#0e0e12'/><stop offset='100%' stop-color='#070709'/></linearGradient></defs><rect width='960' height='640' fill='url(#g)'/><g opacity='.07'><path d='M0 520 C200 480, 320 560, 540 520 S 900 560, 960 520' stroke='#f33' stroke-width='80' fill='none'/><path d='M0 420 C240 460, 380 400, 600 440 S 860 420, 960 440' stroke='#f33' stroke-width='40' fill='none'/></g></svg>`);
-  // Bucket monster (open/closed)
   Spr.bucketOpen = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='140' height='40' viewBox='0 0 140 40'><rect x='0' y='6' width='140' height='28' rx='6' fill='#1a1c22' stroke='#2c3038' stroke-width='3'/><g fill='#e7e7e7' stroke='#111' stroke-width='1'><polygon points='10,6 20,22 0,22'/><polygon points='30,6 40,22 20,22'/><polygon points='50,6 60,22 40,22'/><polygon points='70,6 80,22 60,22'/><polygon points='90,6 100,22 80,22'/><polygon points='110,6 120,22 100,22'/><polygon points='130,6 140,22 120,22'/></g></svg>`);
   Spr.bucketClosed = svgToImg(`<svg xmlns='http://www.w3.org/2000/svg' width='140' height='40' viewBox='0 0 140 40'><rect x='0' y='10' width='140' height='24' rx='6' fill='#1a1c22' stroke='#2c3038' stroke-width='3'/><g fill='#e7e7e7' stroke='#111' stroke-width='1'><polygon points='10,34 20,20 0,20'/><polygon points='30,34 40,20 20,20'/><polygon points='50,34 60,20 40,20'/><polygon points='70,34 80,20 60,20'/><polygon points='90,34 100,20 80,20'/><polygon points='110,34 120,20 100,20'/><polygon points='130,34 140,20 120,20'/></g></svg>`);
-  // Jumpscare sprite (harsh face)
-  Spr.scare = (() => {
-    const svg = `
-    <svg xmlns='http://www.w3.org/2000/svg' width='960' height='640' viewBox='0 0 960 640'>
-      <defs>
-        <radialGradient id='jg' cx='50%' cy='50%' r='65%'>
-          <stop offset='0%' stop-color='#2b0005'/>
-          <stop offset='60%' stop-color='#120004'/>
-          <stop offset='100%' stop-color='#000000'/>
-        </radialGradient>
-      </defs>
-      <rect width='960' height='640' fill='url(#jg)'/>
-      <g>
-        <circle cx='330' cy='260' r='110' fill='#fafafa'/>
-        <circle cx='630' cy='260' r='110' fill='#fafafa'/>
-        <circle cx='330' cy='260' r='44' fill='#060606'/>
-        <circle cx='630' cy='260' r='44' fill='#060606'/>
-        <path d='M180 440 Q480 560 780 440' stroke='#f2dcdc' stroke-width='36' fill='none'/>
-      </g>
-    </svg>`;
-    return svgToImg(svg);
-  })();
+  Spr.scare = (() => { const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='960' height='640' viewBox='0 0 960 640'><defs><radialGradient id='jg' cx='50%' cy='50%' r='65%'><stop offset='0%' stop-color='#2b0005'/><stop offset='60%' stop-color='#120004'/><stop offset='100%' stop-color='#000000'/></radialGradient></defs><rect width='960' height='640' fill='url(#jg)'/><g><circle cx='330' cy='260' r='110' fill='#fafafa'/><circle cx='630' cy='260' r='110' fill='#fafafa'/><circle cx='330' cy='260' r='44' fill='#060606'/><circle cx='630' cy='260' r='44' fill='#060606'/><path d='M180 440 Q480 560 780 440' stroke='#f2dcdc' stroke-width='36' fill='none'/></g></svg>`; return svgToImg(svg); })();
 
   // ===== Game State =====
   const STATE = { BOOT:0, MENU:1, PLAY:2, GAMEOVER:3 };
@@ -286,31 +233,15 @@
   const POW = { NONE:'none', SKULL:'skull', ROTTEN:'rotten' };
 
   const world = {
-    gravity: 0.34,
-    friction: 0.995,
-    ballsLeft: 10,
-    score: 0,
-    streak: 0,
-    level: 1,
-    ball: null,
-    ballType: POW.NONE,
-    pierce: 0,
-    pegs: [],
-    hallucinations: [],
-    decals: [],
-    particles: [],
+    gravity: 0.34, friction: 0.995,
+    ballsLeft: 10, score: 0, streak: 0, level: 1,
+    ball: null, ballType: POW.NONE, pierce: 0,
+    pegs: [], hallucinations: [], decals: [], particles: [],
     bucket: { x: W*0.25, y: H-30, w: 140, h: 34, vx: 2.2, open: true, anim:0 },
     aim: { x: W/2, y: 60, ang: -Math.PI/2, power: 14, ready: false },
-    clearedCursed: 0,
-    totalCursed: 0,
-    screenShake: 0,
-    fear: 0,
-    // Fear-driven events
-    nextWhisperAt: 0,
-    nextHissAt: 0,
-    glitchUntil: 0,
-    scareUntil: 0,
-    scareCooldownUntil: 0,
+    clearedCursed: 0, totalCursed: 0,
+    screenShake: 0, fear: 0,
+    nextWhisperAt: 0, nextHissAt: 0, glitchUntil: 0, scareUntil: 0, scareCooldownUntil: 0,
   };
 
   // ===== Level helpers =====
@@ -327,14 +258,12 @@
   function ring(cx,cy,rad,count,type='normal'){ const arr=[]; for(let i=0;i<count;i++){ const a=i/count*Math.PI*2; arr.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad,r:20,type,hit:false,t:Math.random()*100}); } return arr; }
   function spiral(cx, cy, turns=10, step=22, count=90){ const arr=[]; let t=0; for(let i=0;i<count;i++){ const r= t*step; const a = t * 0.55; arr.push({x:cx+Math.cos(a)*r, y:cy+Math.sin(a)*r, r:18, type: (i%7===0? 'cursed':'normal'), hit:false,t:Math.random()*100}); t += turns/count; } return arr; }
   function mix(arr, nSteel=10){ for(let i=0;i<nSteel && i<arr.length;i++) arr[i].type='steel'; return arr; }
-
   const LEVELS = [
     () => makeGrid(5,9,140,8,6),
     () => [...makeGrid(6,10,120,6,5), ...ring(W/2, H/2, 160, 18, 'cursed')],
     () => mix(makeGrid(7,11,110,5,4), 12),
     () => spiral(W/2, H/2, 12, 20, 88),
   ];
-
   function loadLevel(i){
     world.level = i; world.pegs = LEVELS[(i-1)%LEVELS.length]();
     world.totalCursed = world.pegs.filter(p=>p.type==='cursed').length;
@@ -377,7 +306,6 @@
     }
     draw(){ const img = world.ballType===POW.SKULL? Spr.skull : world.ballType===POW.ROTTEN? Spr.rotten : Spr.ball; ctx.drawImage(img, this.x-20, this.y-20, 40, 40); }
   }
-
   class Particle{
     constructor(x,y,vx,vy,life,scale){ this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.life=life; this.scale=scale||1; }
     step(){ this.vy += 0.18; this.x += this.vx; this.y += this.vy; this.vx *= 0.99; this.vy *= 0.99; this.life--; }
@@ -392,7 +320,6 @@
 
   // Fear tiers/scheduler
   function fearTier(){ const f=world.fear; return (f>=95)?4 : (f>=85)?3 : (f>=70)?2 : (f>=50)?1 : 0; }
-
   function scheduleFearTimers(now){
     const tier = fearTier();
     if(world.nextWhisperAt===0) world.nextWhisperAt = now + 3000;
@@ -412,7 +339,6 @@
       world.nextHissAt = now + (gap * (0.7 + Math.random()*0.7));
     }
   }
-
   function jumpscare(ms=180){
     const now = performance.now();
     if(now < world.scareCooldownUntil) return;
@@ -423,7 +349,7 @@
 
   // ===== Effects & Hits =====
   function dropPowerupChance(px, py){
-    if(Math.random()<0.2){ // 20% on cursed hits
+    if(Math.random()<0.2){
       const type = Math.random()<0.5? POW.SKULL : POW.ROTTEN;
       showFloat(`Power: ${type===POW.SKULL? 'Flaming Skull':'Rotten'}`, px, py);
       world.ballType = type;
@@ -431,11 +357,9 @@
       updateHUD();
     }
   }
-
   function hitPeg(p, pierce){
     if(p.type==='steel'){ noise(90,.18); screenShake(3); world.streak=0; world.score+=5; return; }
     p.hit = true;
-    // Scary whispers scale with fear on any hit
     if(world.fear > 60 && Math.random() < Math.min(0.6, (world.fear-50)/80)) whisper();
 
     world.streak++; world.score += 60 + world.streak*12; pulseScore();
@@ -457,29 +381,34 @@
 
     if(!pierce && world.ballType===POW.SKULL && world.pierce<=0){ world.ballType = POW.NONE; updateHUD(); }
   }
-
   function showFloat(text,x,y){
-    const div=document.createElement('div');
-    div.textContent=text;
-    div.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;transform:translate(-50%,-50%);font-weight:700;color:#ff6; text-shadow:0 0 8px #a00;';
+    const div=document.createElement('div'); div.textContent=text;
+    div.style.cssText='position:absolute;left:'+x+'px;top:'+y+'px;transform:translate(-50%,-50%);font-weight:700;color:#ff6; text-shadow:0 0 8px #a00;pointer-events:none;';
     ui.appendChild(div); let t=0;
     const id=setInterval(()=>{ t++; div.style.top=(y- t*1.2)+'px'; div.style.opacity = 1 - t/60; if(t>60){ clearInterval(id); div.remove(); }}, 16);
   }
 
-  // ===== Input (with scaling-safe mouse) =====
+  // ===== Input (mouse + touch with scaling) =====
   const mouse = {x: W/2, y: 60, down:false};
-  canvas.addEventListener('mousemove', e=>{
+  function mapToCanvas(clientX, clientY){
     const r = canvas.getBoundingClientRect();
-    const x = (e.clientX - r.left) * (W / r.width);
-    const y = (e.clientY - r.top)  * (H / r.height);
-    mouse.x = x; mouse.y = y;
+    const x = (clientX - r.left) * (W / r.width);
+    const y = (clientY - r.top)  * (H / r.height);
+    return {x,y};
+  }
+  function aimAt(x,y){
+    mouse.x=x; mouse.y=y;
     const dx = x - W/2, dy = y - 60;
     world.aim.ang = Math.atan2(dy,dx);
     world.aim.power = Math.min(20, Math.hypot(dx,dy)/30 + 8);
-  });
-  canvas.addEventListener('mousedown', ()=>{ mouse.down=true; if(state===STATE.PLAY) fire(); else if(state===STATE.MENU) startGame(); else if(state===STATE.BOOT) bootProg=100; });
-  window.addEventListener('mouseup', ()=> mouse.down=false);
+  }
+  canvas.addEventListener('mousemove', e=>{ const p=mapToCanvas(e.clientX,e.clientY); aimAt(p.x,p.y); });
+  canvas.addEventListener('mousedown', ()=>{ if(state===STATE.PLAY) fire(); else if(state===STATE.MENU) startGame(); else if(state===STATE.BOOT) bootProg=100; });
   window.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ if(state===STATE.MENU) startGame(); else if(state===STATE.PLAY) fire(); else if(state===STATE.BOOT) bootProg=100; } });
+
+  // Touch
+  canvas.addEventListener('touchstart', (e)=>{ const t=e.changedTouches[0]; const p=mapToCanvas(t.clientX,t.clientY); aimAt(p.x,p.y); if(state===STATE.PLAY) fire(); else if(state===STATE.MENU) startGame(); else if(state===STATE.BOOT) bootProg=100; e.preventDefault(); }, {passive:false});
+  canvas.addEventListener('touchmove', (e)=>{ const t=e.changedTouches[0]; const p=mapToCanvas(t.clientX,t.clientY); aimAt(p.x,p.y); e.preventDefault(); }, {passive:false});
 
   function fire(){ if(!world.aim.ready || world.ballsLeft<=0) return; const a = world.aim.ang; const p = world.aim.power; world.ball = new Ball(W/2, 60, Math.cos(a)*p, Math.sin(a)*p); world.ballsLeft--; world.aim.ready=false; tone(520,0.06,'square',0.045); updateHUD(); }
 
@@ -489,19 +418,17 @@
 
   // ===== UI Screens =====
   function setOverlay(html){ ui.innerHTML = html||''; }
-  function showBoot(){ setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="meter" style="width:320px"><i id="bootFill" style="transform:scaleX(0)"></i></div><div class="warn">Content warning: flashing lights and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE</div></div>`); }
-  function tickBoot(){ bootProg = Math.min(100, bootProg + 1.5 + Math.random()*1.5); const fill=document.getElementById('bootFill'); const msg=document.getElementById('bootMsg'); if(fill) fill.style.transform = `scaleX(${bootProg/100})`; if(msg && bootProg>bootMsgIdx*20){ bootMsgIdx=(bootMsgIdx+1)%bootMsgs.length; msg.textContent = bootMsgs[bootMsgIdx]; } if(bootProg>=100){ startMenu(); } }
-  function startMenu(){ state=STATE.MENU; world.aim.ready=false; setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle">H⍜rr⍜r Arcade</div><button class="btn play good" id="playBtn">▶ PLAY</button><div class="warn">SPACE or Click to begin. Use the Quality menu if performance dips.</div><div class="flash">PRESS SPACE</div></div>`); document.getElementById('playBtn').onclick=()=> startGame(); }
+  function showBoot(){ setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="warn">Content warning: flashing lights and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE / TAP</div></div>`); }
+  function tickBoot(){ bootProg = Math.min(100, bootProg + 1.5 + Math.random()*1.5); const msg=document.getElementById('bootMsg'); if(msg && bootProg>bootMsgIdx*20){ bootMsgIdx=(bootMsgIdx+1)%bootMsgs.length; msg.textContent = bootMsgs[bootMsgIdx]; } if(bootProg>=100){ startMenu(); } }
+  function startMenu(){ state=STATE.MENU; world.aim.ready=false; setOverlay(`<div class="menu"><div class="title">Nightmare Peggle</div><div class="subtitle">H⍜rr⍜r Arcade</div><button class="btn play good" id="playBtn">▶ PLAY</button><div class="warn">SPACE / Tap to begin. Use Quality if performance dips.</div><div class="flash">PRESS SPACE / TAP</div></div>`); document.getElementById('playBtn').onclick=()=> startGame(); }
   function startGame(){ state=STATE.PLAY; setOverlay(''); loadLevel(1); updateHUD(); world.aim.ready=true; }
   function showGameOver(){ const final = Math.floor(world.score); setOverlay(`<div class="menu"><div class="title">You Were Devoured</div><div class="subtitle">Final score: <b>${final}</b> — Level ${world.level}</div><div class="row" style="gap:8px"><button class="btn good" id="retryBtn">↺ Try Again</button><button class="btn" id="menuBtn">☰ Menu</button></div></div>`); document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); }; document.getElementById('menuBtn').onclick=()=> startMenu(); }
 
   // ===== Draw helpers =====
   function drawBG(){ ctx.drawImage(Spr.bg, 0, 0, W, H);
     const flick = 0.06 + Math.sin(Date.now()*0.002)*0.02; ctx.save(); ctx.globalAlpha=flick; const grd=ctx.createRadialGradient(W/2, 40, 40, W/2, 40, 420); grd.addColorStop(0,'rgba(255,60,80,.35)'); grd.addColorStop(1,'rgba(0,0,0,0)'); rect(0,0,W,H,grd); ctx.restore(); }
-
   function drawDecals(){ for(const d of world.decals){ ctx.save(); ctx.globalAlpha=.8; ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.drawImage(Spr.splat, -d.s/2, -d.s/2, d.s, d.s); ctx.restore(); } }
   function drawPegs(){ const t=Date.now()*0.008; for(const p of world.pegs){ if(p.hit) continue; const wob = Math.sin(p.t + t)* (p.type==='cursed'? 1.5:0.6); const img = p.type==='cursed'? (Math.sin(t*3+p.t)>0? Spr.cursedA: Spr.cursedB) : (p.type==='steel'? Spr.steel : Spr.meat); ctx.drawImage(img, p.x-22+wob, p.y-22, 44, 44); } }
-
   function drawHallucinations(){
     if(world.fear<60) return;
     const count = Math.min(10, Math.floor((world.fear-60)/4));
@@ -510,33 +437,25 @@
     for(const h of world.hallucinations){ const wob=Math.sin(h.t + Date.now()*0.008)*1.2; ctx.drawImage(Spr.cursedA, h.x-22+wob, h.y-22, 44, 44); }
     ctx.restore();
   }
-
   function drawAimer(){
     if(!world.aim.ready) return;
     const a=world.aim.ang; const p=world.aim.power;
     const tx=W/2+Math.cos(a)*p*5, ty=60+Math.sin(a)*p*5;
-
     ctx.save();
     if(world.fear>70){
-      if(Math.random()<0.25) { ctx.globalAlpha = 0.0; ctx.restore(); return; } // flicker off
+      if(Math.random()<0.25) { ctx.globalAlpha = 0.0; ctx.restore(); return; }
       ctx.filter='contrast(140%) saturate(120%) blur(1px)';
     }
-    ctx.globalAlpha=.9;
-    ctx.setLineDash([6,6]);
-    ctx.lineDashOffset = - (Date.now()*0.05 % 12);
+    ctx.globalAlpha=.9; ctx.setLineDash([6,6]); ctx.lineDashOffset = - (Date.now()*0.05 % 12);
     ctx.beginPath(); ctx.moveTo(W/2, 60); ctx.lineTo(tx, ty);
-    ctx.strokeStyle='#f43f5e'; ctx.lineWidth=2; ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.strokeStyle='#f43f5e'; ctx.lineWidth=2; ctx.stroke(); ctx.setLineDash([]);
     ctx.restore();
   }
-
-  // Fear overlays
   function drawFearVignette(){
     if(world.fear < 50) return;
     const a = Math.min(0.45, (world.fear-40)/140);
     const grd = ctx.createRadialGradient(W/2, H*0.52, 120, W/2, H*0.52, Math.max(W,H));
-    grd.addColorStop(0, 'rgba(120,8,16,0)');
-    grd.addColorStop(1, `rgba(120,8,16,${a})`);
+    grd.addColorStop(0, 'rgba(120,8,16,0)'); grd.addColorStop(1, `rgba(120,8,16,${a})`);
     ctx.save(); rect(0,0,W,H,grd); ctx.restore();
   }
   function drawGlitchBars(now){
@@ -547,8 +466,7 @@
       const y  = 80 + Math.random()*(H-160);
       const h  = 4 + Math.random()*10;
       const dx = (-6 + Math.random()*12) * (0.5 + fearTier()*0.4);
-      ctx.fillStyle = i%2? '#f33' : '#ccc';
-      ctx.fillRect(0, y, W, h);
+      ctx.fillStyle = i%2? '#f33' : '#ccc'; ctx.fillRect(0, y, W, h);
       try { ctx.drawImage(canvas, 0, y, W, h, dx, y, W, h); } catch {}
     }
     ctx.restore();
@@ -560,22 +478,15 @@
   }
 
   function updateHUD(){
-    // existing badges
-    ballsLabel.textContent = world.ballsLeft;
-    scoreLabel.textContent = Math.floor(world.score);
-    streakLabel.textContent = world.streak;
-    cursedLabel.textContent = Math.max(0, world.totalCursed - world.clearedCursed);
-    levelLabel.textContent  = world.level;
-    fearLabel.textContent   = Math.round(world.fear)+'%';
-    powerLabel.textContent  = world.ballType===POW.NONE? '—' : (world.ballType===POW.SKULL? `Skull (${world.pierce})` : 'Rotten');
-    const prog = world.totalCursed? world.clearedCursed/world.totalCursed : 0;
-    progressFill.style.transform = `scaleX(${prog})`;
-
-    // pretty HUD mirrors
+    // Pretty HUD only
     levelPill.textContent  = world.level;
     ballsPill.textContent  = world.ballsLeft;
     streakPill.textContent = world.streak;
+
     fearFill.style.transform = `scaleX(${Math.min(1, Math.max(0, world.fear/100))})`;
+
+    const prog = world.totalCursed? world.clearedCursed/world.totalCursed : 0;
+    progressFill.style.transform = `scaleX(${prog})`;
   }
 
   function checkEnd(){
@@ -597,20 +508,23 @@
     } else draw();
   }
 
-  // ===== Fullscreen + Fit to Screen =====
+  // ===== Fullscreen + Fit to Screen (works on mobile too) =====
   function fitToScreen(){
-    const headerH = document.querySelector('header').offsetHeight;
-    const footerH = document.querySelector('footer').offsetHeight;
+    // Available space inside main, minus header if not fullscreen
+    const headerH = document.fullscreenElement ? 0 : document.querySelector('header').offsetHeight;
+    // account for iOS safe area
+    const safeTop = 0, safeBottom = 0;
     const availW = window.innerWidth;
-    const availH = window.innerHeight - headerH - footerH - 16;
+    const availH = window.innerHeight - headerH - safeTop - safeBottom - 6;
     const scale = Math.max(0.5, Math.min(availW / W, availH / H));
     crt.style.transform = `scale(${scale})`;
   }
-  window.addEventListener('resize', fitToScreen);
+  window.addEventListener('resize', fitToScreen, {passive:true});
   fitToScreen();
 
   function toggleFS(){
-    if (!document.fullscreenElement) { document.documentElement.requestFullscreen?.(); }
+    const root = document.documentElement;
+    if (!document.fullscreenElement) { root.requestFullscreen?.(); }
     else { document.exitFullscreen?.(); }
   }
   fsBtn.onclick = toggleFS;
@@ -635,16 +549,12 @@
     if(state===STATE.MENU){ drawBG(); return; }
 
     withShake(()=>{
-
-      // base scene
       if(world.fear>70) ctx.filter='contrast(140%) saturate(115%) blur(1px)';
       drawBG(); ctx.filter='none';
 
-      // behind-world overlays
       drawFearVignette();
       drawGlitchBars(now);
 
-      // world
       drawHallucinations();
       drawDecals();
       stepBucket(); drawBucket(); drawPegs();
@@ -652,7 +562,6 @@
       for(let i=world.particles.length-1;i>=0;i--){ const pt=world.particles[i]; pt.step(); pt.draw(); if(pt.life<=0 || pt.y>H+60) world.particles.splice(i,1); }
       world.ball?.draw();
 
-      // front
       drawAimer();
       drawJumpscare(now);
     });
