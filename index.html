@@ -16,28 +16,32 @@
     .danger{border-color:#3a1820;background:#17060a;color:#fecaca}
     .good{border-color:#1d3a26;background:#06140a;color:#bbf7d0}
     .row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
-    main{display:flex;align-items:center;justify-content:center;gap:1.5rem;padding:1rem}
+    main{display:flex;align-items:stretch;justify-content:center;gap:1.5rem;padding:1rem;flex-wrap:wrap}
+    .center-col{flex:1 1 520px;display:flex;flex-direction:column;align-items:center;gap:1.25rem;min-width:320px;max-width:960px;width:100%}
+    .hud-top{width:100%;display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:0 1rem}
 
     /* CRT look */
-    .crt{position:relative}
+    .crt{position:relative;display:flex;justify-content:center;width:100%}
     .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background: repeating-linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.035) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 160px rgba(0,0,0,.75)}
 
-    canvas{background:#0a0a0c;border:1px solid #1b1b1f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+    canvas{background:#0a0a0c;border:1px solid #1b1b1f;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.7);width:min(100%,960px);height:auto}
     footer{display:flex;justify-content:center;align-items:center;gap:1rem;padding:.75rem 1rem;border-top:1px solid #17171a;background:linear-gradient(180deg,#0a0a0c,#070708)}
     .title-group{display:flex;flex-direction:column;gap:.45rem;min-width:220px}
-    .fear-bar{display:flex;align-items:center;gap:.6rem;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
-    .fear-bar .label{opacity:.6}
+    .fear-bar{display:flex;align-items:center;justify-content:center;gap:.65rem;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.9;flex-wrap:wrap}
+    .fear-bar .label{opacity:.7}
     #fearLabel{font-weight:600;letter-spacing:.08em}
     .meter{height:8px;border-radius:999px;background:#111214;border:1px solid #222;position:relative;overflow:hidden}
     .meter>i{position:absolute;inset:0;background:linear-gradient(90deg,#e11d48,#f43f5e,#e11d48);transform-origin:left center;transition:transform .2s ease-out;}
-    .meter.fear{width:220px;height:10px}
+    .meter.fear{width:100%;max-width:420px;height:12px}
     .meter.progress{width:320px}
     .hud{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
-    .sidebar{display:flex;flex-direction:column;gap:.75rem;min-width:160px}
+    .sidebar{display:flex;flex-direction:column;gap:.85rem;min-width:160px}
     .sidebar.right{align-items:flex-end}
-    .badge{padding:.35rem .75rem;border:1px solid #24242a;border-radius:8px;background:#0f0f12;display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-width:150px}
-    .badge b{font-size:16px;letter-spacing:.04em}
+    .badge{padding:.65rem .8rem;border-radius:12px;background:linear-gradient(180deg,rgba(20,20,28,.92),rgba(12,12,16,.92));border:1px solid rgba(78,76,112,.36);display:flex;flex-direction:column;gap:.35rem;min-width:160px;box-shadow:0 8px 22px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);align-items:flex-start;text-align:left}
+    .sidebar.right .badge{align-items:flex-end;text-align:right}
+    .badge-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;opacity:.65}
+    .badge b{font-size:20px;letter-spacing:.06em}
     .overlay{position:absolute;inset:0;display:grid;place-items:center;color:#e5e7eb;pointer-events:none}
     .streak-pop{position:absolute;font:700 24px/1 Inter, ui-sans-serif, system-ui;color:#f87171;text-shadow:0 0 12px rgba(248,113,113,.6);pointer-events:none}
     .menu{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:16px;background:rgba(10,10,12,.72);backdrop-filter:blur(6px);padding:28px;border:1px solid #222;border-radius:14px;text-align:center}
@@ -45,14 +49,23 @@
     .subtitle{opacity:.9}
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
     @media (max-width:1100px){
-      main{flex-direction:column;gap:1rem}
-      .sidebar{flex-direction:row;align-items:center;justify-content:center;flex-wrap:wrap;min-width:0}
-      .sidebar.right{align-items:center}
-      .badge{min-width:140px}
+      main{flex-direction:column;gap:1.5rem;align-items:stretch}
+      .center-col{order:1;min-width:0}
+      .sidebar{flex-direction:row;align-items:center;justify-content:center;flex-wrap:wrap;width:100%;order:2}
+      .sidebar.right{order:3;align-items:center}
+      .badge{min-width:140px;text-align:center}
       header{align-items:center}
     }
     @media (max-width:700px){
-      .meter.fear{width:180px}
+      .sidebar{gap:.65rem}
+      .badge{flex:1 1 140px}
+      .hud-top{padding:0}
+      .meter.progress{width:100%}
+    }
+    @media (max-width:520px){
+      header{justify-content:center}
+      header .row{justify-content:center;width:100%}
+      canvas{width:100%}
     }
     .flash{animation:flash 1.6s infinite}
     @keyframes flash{0%,60%{opacity:.25} 70%{opacity:.7} 100%{opacity:.25}}
@@ -63,13 +76,6 @@
     <header>
       <div class="title-group">
         <h1>Evil Peggle</h1>
-        <div class="fear-bar">
-          <span class="label">Fear</span>
-          <div class="meter fear" title="Current terror level">
-            <i id="fearFill" style="transform:scaleX(0)"></i>
-          </div>
-          <span id="fearLabel">0%</span>
-        </div>
       </div>
       <div class="sp"></div>
       <div class="row">
@@ -81,17 +87,28 @@
     </header>
     <main>
       <aside class="sidebar left">
-        <span class="badge">Level: <b id="levelLabel">1</b></span>
-        <span class="badge">Balls: <b id="ballsLabel">10</b></span>
-        <span class="badge">Cursed left: <b id="cursedLabel">—</b></span>
+        <span class="badge"><span class="badge-label">Level</span><b id="levelLabel">1</b></span>
+        <span class="badge"><span class="badge-label">Balls</span><b id="ballsLabel">10</b></span>
+        <span class="badge"><span class="badge-label">Cursed Left</span><b id="cursedLabel">—</b></span>
       </aside>
-      <div class="crt">
-        <canvas id="game" width="960" height="640"></canvas>
-        <div class="overlay" id="uiOverlay"></div>
-      </div>
+      <section class="center-col">
+        <div class="hud-top">
+          <div class="fear-bar">
+            <span class="label">Fear</span>
+            <div class="meter fear" title="Current terror level">
+              <i id="fearFill" style="transform:scaleX(0)"></i>
+            </div>
+            <span id="fearLabel">0%</span>
+          </div>
+        </div>
+        <div class="crt">
+          <canvas id="game" width="960" height="640"></canvas>
+          <div class="overlay" id="uiOverlay"></div>
+        </div>
+      </section>
       <aside class="sidebar right">
-        <span class="badge">Score: <b id="scoreLabel">0</b></span>
-        <span class="badge">Power: <b id="powerLabel">—</b></span>
+        <span class="badge"><span class="badge-label">Score</span><b id="scoreLabel">0</b></span>
+        <span class="badge"><span class="badge-label">Power</span><b id="powerLabel">—</b></span>
       </aside>
     </main>
     <footer>
