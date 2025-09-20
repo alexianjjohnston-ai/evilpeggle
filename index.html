@@ -6,7 +6,7 @@
   <title>Evil Peggle</title>
   <style>
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#0a0a0f 0%, #050508 55%, #020204 100%);color:#f7edff;font:14px/1.45 "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial}
+    body{margin:0;overflow:hidden;background:linear-gradient(180deg,#0a0a0f 0%, #050508 55%, #020204 100%);color:#f7edff;font:14px/1.45 "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial}
     .wrap{display:grid;grid-template-rows:auto 1fr auto;height:100%;background:radial-gradient(circle at 50% 115%, rgba(160,24,32,.24), rgba(4,4,6,0) 65%)}
     header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem;background:rgba(18,18,20,.92);border-bottom:1px solid rgba(239,68,68,.45);backdrop-filter:blur(12px);box-shadow:0 18px 36px rgba(0,0,0,.45);position:sticky;top:0;z-index:20}
     header h1{margin:0;font:600 13px/1.2 "Cinzel", Trajan, serif;letter-spacing:.28em;text-transform:uppercase;color:#fde68a;text-shadow:0 0 12px rgba(239,68,68,.6)}
@@ -21,14 +21,16 @@
     main{display:grid;place-items:center;padding:0.5rem clamp(0.5rem,2vw,1rem)}
 
     /* CRT look */
-    .crt{position:relative;width:min(960px,100%);margin:0 auto}
+    .stage{position:relative;display:flex;justify-content:center;align-items:flex-start;padding:0 12px;width:100%;overflow:hidden;}
+    .stage::before{content:"";display:block;padding-top:0}
+    .crt{position:relative;width:960px;height:720px;margin:0 auto;transform-origin:top center}
     .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 200px rgba(0,0,0,.82)}
     body[data-fear='3'] .crt:after{box-shadow:inset 0 0 240px rgba(185,28,28,.55)}
     body[data-fear='4'] .crt:after{box-shadow:inset 0 0 320px rgba(220,20,60,.65)}
     body[data-fear='4'] canvas{filter:saturate(1.12) contrast(1.05)}
 
-    canvas{display:block;width:100%;height:auto;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
+    canvas{display:block;width:100%;height:100%;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
     .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;padding:18px 24px 14px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12);opacity:1;transition:opacity .2s ease}
     .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
@@ -158,8 +160,9 @@
       </div>
     </header>
     <main>
-      <div class="crt">
-        <canvas id="game" width="960" height="720"></canvas>
+      <div class="stage" id="stage">
+        <div class="crt">
+          <canvas id="game" width="960" height="720"></canvas>
         <div class="hud-layer" id="hudLayer">
           <div class="hud-top">
             <div class="hud-cluster">
@@ -201,8 +204,9 @@
             </div>
           </div>
         </div>
-        <div class="overlay" id="uiOverlay"></div>
-        <div class="orientation-overlay" id="orientationOverlay"></div>
+          <div class="overlay" id="uiOverlay"></div>
+          <div class="orientation-overlay" id="orientationOverlay"></div>
+        </div>
       </div>
     </main>
     <footer>
@@ -222,6 +226,9 @@
   const ui = document.getElementById('uiOverlay');
   ui.style.pointerEvents = 'none';
   const orientationOverlay = document.getElementById('orientationOverlay');
+  const stageEl = document.getElementById('stage');
+  const crtEl = stageEl ? stageEl.querySelector('.crt') : null;
+  let renderScale = 1;
 
   // ===== HUD refs =====
   const ballsLabel = document.getElementById('ballsLabel');
@@ -1494,7 +1501,16 @@
 
   // ===== Input =====
   const mouse = {x: W/2, y: 60, down:false};
-  canvas.addEventListener('mousemove', e=>{ const r=canvas.getBoundingClientRect(); mouse.x = e.clientX-r.left; mouse.y = e.clientY-r.top; const dx = mouse.x - W/2, dy = mouse.y - 60; world.aim.ang = Math.atan2(dy,dx); world.aim.power = Math.min(20, Math.hypot(dx,dy)/30 + 8); });
+  canvas.addEventListener('mousemove', e=>{
+    const r=canvas.getBoundingClientRect();
+    const scaleX = r.width ? (canvas.width / r.width) : 1;
+    const scaleY = r.height ? (canvas.height / r.height) : 1;
+    mouse.x = Math.max(0, Math.min(W, (e.clientX-r.left) * scaleX));
+    mouse.y = Math.max(0, Math.min(H, (e.clientY-r.top) * scaleY));
+    const dx = mouse.x - W/2, dy = mouse.y - 60;
+    world.aim.ang = Math.atan2(dy,dx);
+    world.aim.power = Math.min(20, Math.hypot(dx,dy)/30 + 8);
+  });
   canvas.addEventListener('mousedown', ()=>{ mouse.down=true; if(state===STATE.PLAY) fire(); else if(state===STATE.MENU) startGame(); else if(state===STATE.BOOT) bootSkip=true; });
   window.addEventListener('mouseup', ()=> mouse.down=false);
   window.addEventListener('keydown', (e)=>{
@@ -1516,8 +1532,12 @@
     }
   });
 
-  window.addEventListener('resize', checkOrientationLock);
-  window.addEventListener('orientationchange', () => setTimeout(checkOrientationLock, 100));
+  const handleViewportChange = () => {
+    resizeStage();
+    checkOrientationLock();
+  };
+  window.addEventListener('resize', handleViewportChange);
+  window.addEventListener('orientationchange', () => setTimeout(handleViewportChange, 120));
 
   function fire(){ if(!world.aim.ready || world.ballsLeft<=0) return; const a = world.aim.ang; const p = world.aim.power; world.ball = new Ball(W/2, 60, Math.cos(a)*p, Math.sin(a)*p); world.ballsLeft--; world.aim.ready=false; tone(520,0.06,'square',0.045); updateHUD(); }
 
@@ -1574,6 +1594,27 @@
     }
   }
   function enterAttract(){ ensureDeviceType(()=> ensurePlayerName(()=> startMenu())); }
+
+  function resizeStage(){
+    if(!stageEl || !crtEl) return;
+    const header = document.querySelector('header');
+    const footer = document.querySelector('footer');
+    const headerH = header? header.offsetHeight : 0;
+    const footerH = footer? footer.offsetHeight : 0;
+    const availableWidth = Math.max(320, window.innerWidth - 24);
+    const availableHeight = Math.max(240, window.innerHeight - headerH - footerH - 16);
+    const scale = Math.min(1, Math.min(availableWidth / W, availableHeight / H));
+    renderScale = scale > 0 ? scale : 0.1;
+    const scaledWidth = W * renderScale;
+    const scaledHeight = H * renderScale;
+    stageEl.style.width = `${scaledWidth}px`;
+    stageEl.style.height = `${scaledHeight}px`;
+    stageEl.style.minHeight = `${scaledHeight}px`;
+    stageEl.style.maxWidth = `${scaledWidth}px`;
+    crtEl.style.transform = `scale(${renderScale})`;
+    crtEl.style.width = `${W}px`;
+    crtEl.style.height = `${H}px`;
+  }
 
   function ensureDeviceType(done){
     const valid = DEVICE_OPTIONS.some(opt => opt.id === settings.deviceType);
@@ -1640,6 +1681,7 @@
         persistSettings();
         setTimeout(()=>{
           setOverlay('');
+          resizeStage();
           checkOrientationLock();
           if(typeof done === 'function') done();
         }, 180);
@@ -2030,6 +2072,7 @@
   // ===== Reset/Button actions =====
 
   // ===== Boot & start =====
+  resizeStage();
   showBoot();
   checkOrientationLock();
   setInterval(()=>{ if(state===STATE.BOOT) tickBoot(); }, 40);
