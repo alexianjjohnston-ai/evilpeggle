@@ -21,9 +21,8 @@
     main{display:grid;place-items:center;padding:0.5rem clamp(0.5rem,2vw,1rem)}
 
     /* CRT look */
-    .stage{position:relative;display:flex;justify-content:center;align-items:flex-start;padding:0 12px;width:100%;overflow:hidden;}
-    .stage::before{content:"";display:block;padding-top:0}
-    .crt{position:relative;width:960px;height:720px;margin:0 auto;transform-origin:top center}
+    .stage{position:relative;display:flex;justify-content:center;align-items:center;padding:0 12px;width:100%;max-width:960px;margin:0 auto;overflow:hidden}
+    .crt{position:relative;width:100%;max-width:960px;aspect-ratio:4/3;margin:0 auto}
     .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 200px rgba(0,0,0,.82)}
     body[data-fear='3'] .crt:after{box-shadow:inset 0 0 240px rgba(185,28,28,.55)}
@@ -1602,18 +1601,22 @@
     const headerH = header? header.offsetHeight : 0;
     const footerH = footer? footer.offsetHeight : 0;
     const availableWidth = Math.max(320, window.innerWidth - 24);
-    const availableHeight = Math.max(240, window.innerHeight - headerH - footerH - 16);
-    const scale = Math.min(1, Math.min(availableWidth / W, availableHeight / H));
+    const availableHeight = Math.max(320, window.innerHeight - headerH - footerH - 32);
+    const scale = Math.min(availableWidth / W, availableHeight / H, 1);
     renderScale = scale > 0 ? scale : 0.1;
-    const scaledWidth = W * renderScale;
-    const scaledHeight = H * renderScale;
-    stageEl.style.width = `${scaledWidth}px`;
-    stageEl.style.height = `${scaledHeight}px`;
-    stageEl.style.minHeight = `${scaledHeight}px`;
-    stageEl.style.maxWidth = `${scaledWidth}px`;
-    crtEl.style.transform = `scale(${renderScale})`;
-    crtEl.style.width = `${W}px`;
-    crtEl.style.height = `${H}px`;
+    const displayWidth = Math.round(W * renderScale);
+    const displayHeight = Math.round(H * renderScale);
+    stageEl.style.width = `${displayWidth}px`;
+    stageEl.style.height = `${displayHeight}px`;
+    stageEl.style.minHeight = `${displayHeight}px`;
+    stageEl.style.maxWidth = `${displayWidth}px`;
+    crtEl.style.transform = 'none';
+    crtEl.style.width = `${displayWidth}px`;
+    crtEl.style.height = `${displayHeight}px`;
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+    ui.style.width = `${displayWidth}px`;
+    ui.style.height = `${displayHeight}px`;
   }
 
   function ensureDeviceType(done){
