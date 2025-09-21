@@ -131,12 +131,16 @@
     .setting-control{display:flex;align-items:center;justify-content:center}
     .option-wheel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;width:100%}
     .option-wheel button{flex:0 0 26px;height:26px;border-radius:50%;border:1px solid rgba(248,113,113,.4);background:rgba(18,19,27,.82);color:#f8fafc;font-weight:700;cursor:pointer;transition:transform .2s ease,border-color .2s ease}
+    .option-wheel button[disabled]{opacity:0.3;cursor:not-allowed;border-color:rgba(148,163,184,.35)}
     .option-wheel button:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.7)}
     .option-wheel button:active{transform:translateY(0)}
     .option-wheel .option-track{flex:1;display:flex;overflow:hidden;border-radius:14px;border:1px solid rgba(248,113,113,.24);background:rgba(24,26,32,.75);box-shadow:inset 0 4px 16px rgba(0,0,0,.4);height:34px}
-    .option-wheel .option-track span{flex:1;display:flex;align-items:center;justify-content:center;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:#f8fafc;cursor:pointer;user-select:none;transition:background .2s ease,color .2s ease}
+    .option-wheel .option-track span{flex:1;display:flex;align-items:center;justify-content:center;padding:0 8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:#f8fafc;cursor:pointer;user-select:none;white-space:nowrap;transition:background .2s ease,color .2s ease}
     .option-wheel .option-track span:hover{background:rgba(148,163,184,.25)}
     .option-wheel .option-track span.active{background:rgba(248,113,113,.32);color:#fde68a;border-left:1px solid rgba(248,113,113,.45);border-right:1px solid rgba(248,113,113,.45);box-shadow:inset 0 0 16px rgba(248,113,113,.35)}
+    .option-wheel.disabled{opacity:0.35}
+    .option-wheel.disabled button{pointer-events:none}
+    .option-wheel.disabled .option-track span{pointer-events:none}
     .slider-control{display:flex;align-items:center;gap:10px;min-width:180px}
     .slider-value{font-weight:600;font-size:12px;color:#fda4af;letter-spacing:.08em;text-transform:uppercase}
     .settings-panel input[type="text"]{width:100%;padding:.65rem .85rem;border-radius:12px;border:1px solid rgba(248,113,113,.38);background:rgba(14,14,20,.94);color:#ffffff;font-weight:600;letter-spacing:.05em;box-shadow:inset 0 0 14px rgba(0,0,0,.45)}
@@ -505,9 +509,9 @@
                 <span id="deviceLabel">Device Mode</span>
                 <small>Choose your hardware for tailored prompts.</small>
                 <div class="option-wheel" aria-labelledby="deviceLabel">
-                  <button type="button" id="devicePrevBtn" aria-label="Previous device">‹</button>
+                  <button type="button" id="devicePrevBtn" aria-label="Previous device">◀</button>
                   <div class="option-track" id="deviceOptions"></div>
-                  <button type="button" id="deviceNextBtn" aria-label="Next device">›</button>
+                  <button type="button" id="deviceNextBtn" aria-label="Next device">▶</button>
                 </div>
               </div>
             </div>
@@ -516,9 +520,9 @@
                 <span id="qualityLabel">Visual Quality</span>
                 <small>Adjust particles, splatters, and hallucinations.</small>
                 <div class="option-wheel" aria-labelledby="qualityLabel">
-                  <button type="button" id="qualityPrevBtn" aria-label="Lower quality">‹</button>
+                  <button type="button" id="qualityPrevBtn" aria-label="Lower quality">◀</button>
                   <div class="option-track" id="qualityOptions"></div>
-                  <button type="button" id="qualityNextBtn" aria-label="Higher quality">›</button>
+                  <button type="button" id="qualityNextBtn" aria-label="Higher quality">▶</button>
                 </div>
               </div>
             </div>
@@ -625,6 +629,7 @@
       });
     }
     const deviceOptionIds = DEVICE_OPTIONS.map(opt => opt.id);
+    const deviceLocked = state !== STATE.MENU;
     const renderDeviceOptions = () => {
       if(!deviceTrack) return;
       if(!DEVICE_OPTIONS.some(opt => opt.id === settings.deviceType)){
@@ -632,6 +637,8 @@
         persistSettings();
       }
       deviceTrack.innerHTML = DEVICE_OPTIONS.map(opt => `<span data-id="${opt.id}" class="${opt.id===settings.deviceType? 'active':''}">${escHTML(opt.label)}</span>`).join('');
+      if(deviceLocked){ deviceTrack.closest('.option-wheel')?.classList.add('disabled'); }
+      else { deviceTrack.closest('.option-wheel')?.classList.remove('disabled'); }
     };
     const cycleDevice = (dir) => {
       const idx = Math.max(0, deviceOptionIds.indexOf(settings.deviceType));
@@ -655,16 +662,24 @@
         }
       });
     }
-    devicePrevBtn?.addEventListener('click', () => cycleDevice(-1));
-    deviceNextBtn?.addEventListener('click', () => cycleDevice(1));
+    if(!deviceLocked){
+      devicePrevBtn?.addEventListener('click', () => cycleDevice(-1));
+      deviceNextBtn?.addEventListener('click', () => cycleDevice(1));
+    } else {
+      devicePrevBtn?.setAttribute('disabled','true');
+      deviceNextBtn?.setAttribute('disabled','true');
+    }
 
     const qualityOptions = QUALITY_OPTIONS.slice();
+    const qualityLocked = state !== STATE.MENU;
     const renderQualityOptions = () => {
       if(!qualityTrack) return;
       if(!qualityOptions.includes(settings.quality)){
         settings.quality = 'Med';
       }
       qualityTrack.innerHTML = qualityOptions.map(opt => `<span data-quality="${opt}" class="${opt===settings.quality? 'active':''}">${escHTML(opt)}</span>`).join('');
+      if(qualityLocked){ qualityTrack.closest('.option-wheel')?.classList.add('disabled'); }
+      else { qualityTrack.closest('.option-wheel')?.classList.remove('disabled'); }
     };
     const cycleQuality = (dir) => {
       const idx = Math.max(0, qualityOptions.indexOf(settings.quality));
@@ -674,17 +689,22 @@
       renderQualityOptions();
     };
     renderQualityOptions();
-    qualityTrack?.addEventListener('click', e => {
-      const span = e.target.closest('span[data-quality]');
-      if(!span) return;
-      const value = span.dataset.quality;
-      if(value){
-        applyQuality(value);
-        renderQualityOptions();
-      }
-    });
-    qualityPrevBtn?.addEventListener('click', () => cycleQuality(-1));
-    qualityNextBtn?.addEventListener('click', () => cycleQuality(1));
+    if(!qualityLocked){
+      qualityTrack?.addEventListener('click', e => {
+        const span = e.target.closest('span[data-quality]');
+        if(!span) return;
+        const value = span.dataset.quality;
+        if(value){
+          applyQuality(value);
+          renderQualityOptions();
+        }
+      });
+      qualityPrevBtn?.addEventListener('click', () => cycleQuality(-1));
+      qualityNextBtn?.addEventListener('click', () => cycleQuality(1));
+    } else {
+      qualityPrevBtn?.setAttribute('disabled','true');
+      qualityNextBtn?.setAttribute('disabled','true');
+    }
     if(homeButton){
     homeButton.addEventListener('click', () => {
         closeSettings();
@@ -1683,7 +1703,8 @@
         announceStreak(world.streak);
         world.score += 300 * (1 + Math.min(10, world.streak*0.2));
         screenShake(10);
-        tone(880,0.08,'triangle',0.05);
+    tone(420,0.12,'triangle',0.04);
+    noise(200,.18);
         if(settings.bloodEnabled){ sprayBlood(this.x, this.y, 0.8); } else { spawnSpectralMist(this.x, this.y, 1.4); }
         b.open=false;
         b.anim=12;
