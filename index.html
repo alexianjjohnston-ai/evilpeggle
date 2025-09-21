@@ -1856,6 +1856,30 @@
   ];
   const TOTAL_LEVELS = LEVELS.length;
 
+  const COMMUNITY_LEVELS = [
+    {
+      id: 'ritual-embers',
+      name: 'Ritual Embers',
+      difficulty: 'Medium',
+      description: 'A condensed Ember Bloom remix with tighter cursed rings.',
+      build: () => serializePegs(emberBloom())
+    },
+    {
+      id: 'labyrinth-glass',
+      name: 'Glasswork Labyrinth',
+      difficulty: 'Hard',
+      description: 'Steel gates guard alternating corridors—watch your ricochets.',
+      build: () => serializePegs(labyrinthCage())
+    },
+    {
+      id: 'voided-spiral',
+      name: 'Voided Spiral',
+      difficulty: 'Spicy',
+      description: 'A twin spiral packed with cursed pegs and sparse safe shots.',
+      build: () => serializePegs(whisperSpiral())
+    }
+  ];
+
   function loadLevel(i){
     const idx = Math.min(Math.max(1, i), TOTAL_LEVELS) - 1;
     world.level = i;
@@ -2547,6 +2571,16 @@
     stopGame();
     state = STATE.MENU;
 
+    if(settings.deviceType === 'phone'){
+      setOverlay(`<div class="menu story" style="max-width:440px">
+        <div class="title">Desktop Only</div>
+        <p>The Level Lab needs a keyboard or large canvas. Switch the device mode to Tablet or Laptop in settings to continue building.</p>
+        <div class="row" style="gap:12px"><button class="btn" id="labBack">← Menu</button></div>
+      </div>`);
+      document.getElementById('labBack')?.addEventListener('click', () => startMenu());
+      return;
+    }
+
     const builder = {
       pegs: deserializePegs(serializeCurrentLevel()),
       placements: [],
@@ -2556,6 +2590,9 @@
     if(!Array.isArray(builder.pegs)) builder.pegs = [];
 
     let pendingFlash = null;
+    const PREVIEW_SCALE = 0.5;
+    const PREVIEW_WIDTH = Math.round(W * PREVIEW_SCALE);
+    const PREVIEW_HEIGHT = Math.round(H * PREVIEW_SCALE);
 
     const parseLevelPayload = (text) => {
       if(!text) return [];
@@ -2572,79 +2609,101 @@
     const render = (flash=null) => {
       if(flash) pendingFlash = flash;
       const entries = getCustomLevelEntries();
-      const list = entries.length
+      const savedList = entries.length
         ? entries.map(entry => {
             const time = entry.updated ? new Date(entry.updated).toLocaleString() : '—';
-            return `<div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px" data-name="${escHTML(entry.name)}">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <div>
-                  <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px">${escHTML(entry.name)}</span>
-                  <div style="font-size:11px;color:rgba(226,232,240,.7)">${time}</div>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap">
-                  <button class="btn" data-action="play">▶ Play</button>
-                  <button class="btn" data-action="copy">⧉ Load</button>
-                  <button class="btn danger" data-action="delete">✖ Delete</button>
-                </div>
+            return `<div class="lab-saved" data-name="${escHTML(entry.name)}">
+              <div class="lab-saved-meta">
+                <strong>${escHTML(entry.name)}</strong>
+                <span>${time}</span>
+              </div>
+              <div class="lab-saved-actions">
+                <button class="btn" data-action="play">▶ Play</button>
+                <button class="btn" data-action="copy">⧉ Load</button>
+                <button class="btn danger" data-action="delete">✖ Delete</button>
               </div>
             </div>`;
           }).join('')
-        : '<div class="warn">No custom levels saved yet. Add parts or load JSON to craft your first haunt.</div>';
+        : '<div class="warn">No custom levels saved yet. Drag parts into the stage to start a new ritual.</div>';
 
-      const partOptions = LEVEL_PARTS.map(part => `<option value="${part.id}" ${part.id===builder.selectedPartId? 'selected':''}>${escHTML(part.name)}</option>`).join('');
-      const partDescription = escHTML(getLevelPart(builder.selectedPartId)?.description || 'Select a level part to see details.');
+      const palette = LEVEL_PARTS.map(part => `<button class="lab-part" data-part="${part.id}" draggable="false">
+          <span class="label">${escHTML(part.name)}</span>
+          <span class="hint">${escHTML(part.description)}</span>
+        </button>`).join('');
+
       const defaultName = escHTML(customSessionName || 'Custom Draft');
 
       setOverlay(`
-        <div class="menu story level-lab" style="max-width:760px;width:100%;display:flex;flex-direction:column;gap:18px">
+        <div class="menu story level-lab" style="max-width:980px;width:min(98vw,980px);gap:20px">
+          <style id="labStyles">
+            .level-lab{align-items:stretch}
+            .lab-grid{display:grid;grid-template-columns:300px 1fr;gap:18px;width:100%;align-items:start}
+            .lab-stage-shell{background:rgba(12,13,20,.85);border:1px solid rgba(248,113,113,.28);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+            .lab-stage-frame{position:relative;border-radius:14px;overflow:hidden;background:#080910;border:1px solid rgba(148,163,184,.25)}
+            #labStageArea{position:relative;width:100%;aspect-ratio:${W}/${H};display:flex;align-items:center;justify-content:center;touch-action:none}
+            #labStageArea canvas{width:100%;height:100%;display:block}
+            .lab-stage-frame::after{content:"";position:absolute;inset:0;border-radius:14px;border:2px dashed transparent;pointer-events:none;transition:border-color .18s}
+            .lab-stage-frame.drop-ready::after{border-color:rgba(248,113,113,.65)}
+            .lab-stage-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(226,232,240,.8);font-size:14px;text-transform:uppercase;letter-spacing:.16em;pointer-events:none}
+            .lab-stage-hint.hidden{opacity:0}
+            .lab-stage-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+            .lab-stage-controls label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(226,232,240,.7);display:flex;flex-direction:column;gap:4px}
+            #labRotationRange{width:180px}
+            .lab-palette{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,23,.9);border:1px solid rgba(248,113,113,.24);border-radius:18px;padding:16px;max-height:560px;overflow:auto}
+            .lab-palette h3{margin:0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#fda4af}
+            .lab-part{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid rgba(248,113,113,.18);background:rgba(24,25,34,.85);color:#f8fafc;cursor:grab;text-align:left;transition:transform .12s,border-color .12s,background .12s}
+            .lab-part:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.42);background:rgba(30,31,42,.9)}
+            .lab-part.active{border-color:rgba(248,113,113,.75);background:rgba(45,24,32,.92)}
+            .lab-part .label{font-size:13px;font-weight:600;letter-spacing:.06em}
+            .lab-part .hint{font-size:11px;color:rgba(226,232,240,.7)}
+            .lab-saved{display:flex;flex-direction:column;gap:8px;border:1px solid rgba(148,163,184,.25);border-radius:14px;padding:12px;background:rgba(17,18,24,.82)}
+            .lab-saved-meta strong{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#f8fafc}
+            .lab-saved-meta span{font-size:11px;color:rgba(226,232,240,.6)}
+            .lab-saved-actions{display:flex;gap:8px;flex-wrap:wrap}
+            .lab-drag-ghost{position:fixed;z-index:200;pointer-events:none;padding:10px 14px;border-radius:14px;background:rgba(45,21,28,.92);border:1px solid rgba(248,113,113,.45);box-shadow:0 12px 32px rgba(0,0,0,.45);color:#f8fafc;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+            .lab-placement-list{display:flex;flex-direction:column;gap:6px;max-height:160px;overflow:auto}
+            @media (max-width:980px){.lab-grid{grid-template-columns:1fr}}
+          </style>
           <div class="title">Level Lab</div>
-          <p>Assemble arenas from curated parts, then export or import JSON layouts to share the torment.</p>
-          <section class="settings-section" style="gap:12px">
-            <h3>Saved Levels</h3>
-            <div id="labList" style="display:flex;flex-direction:column;gap:10px;max-height:200px;overflow:auto">${list}</div>
-          </section>
-          <section class="settings-section" style="gap:12px">
-            <h3>Level Parts</h3>
-            <div class="settings-stack">
-              <div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:12px">
-                <div class="setting-copy">
-                  <span>Assembly</span>
-                  <small>Select a part, set placement, then stack it into the stage.</small>
+          <p>Drag ritual parts onto the stage, rotate as needed, then export or save your custom horrors.</p>
+          <div class="lab-grid">
+            <aside class="lab-palette" id="labPalette">
+              <h3>Parts Palette</h3>
+              <p style="margin:0;font-size:12px;color:rgba(226,232,240,.75)">Click to select, drag to place. Hold Shift while dragging to snap to a 40px grid.</p>
+              <div id="labPaletteList" style="display:flex;flex-direction:column;gap:10px">${palette}</div>
+            </aside>
+            <div class="lab-stage-shell">
+              <div class="lab-stage-frame" id="labStageFrame">
+                <div id="labStageArea">
+                  <canvas id="labPreview" width="${PREVIEW_WIDTH}" height="${PREVIEW_HEIGHT}"></canvas>
+                  <div class="lab-stage-hint" id="labStageHint">Drag a part here</div>
                 </div>
-                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
-                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(248,189,189,.85)">
-                    Part
-                    <select id="labPartSelect" style="min-width:200px">${partOptions}</select>
-                  </label>
-                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
-                    X
-                    <input type="number" id="labPartX" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
-                  </label>
-                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
-                    Y
-                    <input type="number" id="labPartY" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
-                  </label>
-                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
-                    Rotate°
-                    <input type="number" id="labPartRot" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
-                  </label>
-                  <button class="btn" id="labAddPart">＋ Add Part</button>
-                  <button class="btn danger" id="labClearParts">🗙 Clear All</button>
-                </div>
-                <div class="warn" id="labPartDescription">${partDescription}</div>
-                <div class="warn" id="labBuilderSummary" style="color:#facc15"></div>
               </div>
-              <div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px">
-                <div class="setting-copy">
-                  <span>Placed Parts</span>
-                  <small>Remove a placement to tweak it. Loading JSON clears this list.</small>
+              <div class="lab-stage-controls">
+                <label>
+                  Rotation
+                  <input type="range" id="labRotationRange" min="-180" max="180" step="5" value="${builder.lastPosition.rotation}">
+                </label>
+                <span id="labRotationValue" style="font-size:12px;font-weight:600;color:#fda4af">${Math.round(builder.lastPosition.rotation)}°</span>
+                <button class="btn" id="labRotLeft" aria-label="Rotate left">⟲ -15°</button>
+                <button class="btn" id="labRotRight" aria-label="Rotate right">⟳ +15°</button>
+                <button class="btn" id="labSnapToggle">Snap: Off</button>
+                <button class="btn danger" id="labClearParts">🗙 Clear All</button>
+              </div>
+              <div class="lab-stage-controls" style="gap:16px">
+                <div class="setting-copy" style="gap:4px">
+                  <span style="font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#fda4af">Placed Parts</span>
+                  <div class="lab-placement-list" id="labPlacementList"></div>
                 </div>
-                <div id="labPlacementList" style="max-height:160px;overflow:auto;display:flex;flex-direction:column;gap:6px"></div>
               </div>
             </div>
+          </div>
+          <section class="settings-section" style="gap:12px">
+            <h3>Saved Layouts</h3>
+            <div id="labList" style="display:flex;flex-direction:column;gap:10px;max-height:200px;overflow:auto">${savedList}</div>
           </section>
           <section class="settings-section" style="gap:12px">
-            <h3>Editor</h3>
+            <h3>Export &amp; Share</h3>
             <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fda4af">
               Level Name
               <input type="text" id="labName" value="${defaultName}" maxlength="48" style="padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(20,20,26,.92);color:#f8fafc;font-weight:600">
@@ -2669,13 +2728,20 @@
       const nameInput = document.getElementById('labName');
       const dataInput = document.getElementById('labData');
       const messageEl = document.getElementById('labMessage');
-      const partSelect = document.getElementById('labPartSelect');
-      const partXInput = document.getElementById('labPartX');
-      const partYInput = document.getElementById('labPartY');
-      const partRotInput = document.getElementById('labPartRot');
-      const partDescriptionEl = document.getElementById('labPartDescription');
-      const summaryEl = document.getElementById('labBuilderSummary');
+      const paletteList = document.getElementById('labPaletteList');
+      const stageFrame = document.getElementById('labStageFrame');
+      const stageArea = document.getElementById('labStageArea');
+      const stageHint = document.getElementById('labStageHint');
       const placementList = document.getElementById('labPlacementList');
+      const rotationRange = document.getElementById('labRotationRange');
+      const rotationValue = document.getElementById('labRotationValue');
+      const snapToggle = document.getElementById('labSnapToggle');
+      const previewCanvas = document.getElementById('labPreview');
+      const previewCtx = previewCanvas?.getContext('2d');
+      const labList = document.getElementById('labList');
+
+      let snapToGrid = false;
+      let dragState = null;
 
       const showMsg = (msg, color='#facc15') => {
         if(messageEl){
@@ -2684,10 +2750,51 @@
         }
       };
 
-      const updatePartDescription = () => {
-        if(!partDescriptionEl) return;
-        const part = getLevelPart(partSelect?.value || builder.selectedPartId);
-        partDescriptionEl.textContent = part?.description || 'Select a level part to begin.';
+      const updateRotationDisplay = () => {
+        rotationValue.textContent = `${Math.round(builder.lastPosition.rotation)}°`;
+      };
+
+      const renderPreview = () => {
+        if(!previewCtx) return;
+        previewCtx.clearRect(0, 0, PREVIEW_WIDTH, PREVIEW_HEIGHT);
+        previewCtx.fillStyle = '#080910';
+        previewCtx.fillRect(0, 0, PREVIEW_WIDTH, PREVIEW_HEIGHT);
+        previewCtx.strokeStyle = 'rgba(248,113,113,0.35)';
+        previewCtx.lineWidth = 2;
+        previewCtx.strokeRect(2, 2, PREVIEW_WIDTH-4, PREVIEW_HEIGHT-4);
+        previewCtx.lineWidth = 1;
+        previewCtx.strokeStyle = 'rgba(148,163,184,0.18)';
+        for(let y=120; y<H; y+=60){
+          const py = y * PREVIEW_SCALE;
+          previewCtx.beginPath();
+          previewCtx.moveTo(0, py);
+          previewCtx.lineTo(PREVIEW_WIDTH, py);
+          previewCtx.stroke();
+        }
+        for(let x=120; x<W; x+=80){
+          const px = x * PREVIEW_SCALE;
+          previewCtx.beginPath();
+          previewCtx.moveTo(px, 0);
+          previewCtx.lineTo(px, PREVIEW_HEIGHT);
+          previewCtx.stroke();
+        }
+        for(const p of builder.pegs){
+          const px = p.x * PREVIEW_SCALE;
+          const py = p.y * PREVIEW_SCALE;
+          const radius = (p.r || 20) * PREVIEW_SCALE;
+          previewCtx.beginPath();
+          previewCtx.arc(px, py, radius, 0, Math.PI*2);
+          if(p.type === 'cursed'){
+            previewCtx.fillStyle = '#f87171';
+          } else if(p.type === 'steel'){
+            previewCtx.fillStyle = '#94a3b8';
+          } else {
+            previewCtx.fillStyle = '#fb7185';
+          }
+          previewCtx.fill();
+          previewCtx.strokeStyle = 'rgba(15,23,42,0.8)';
+          previewCtx.stroke();
+        }
       };
 
       const syncTextarea = () => {
@@ -2697,20 +2804,20 @@
       };
 
       const updateSummary = () => {
+        const summaryEl = document.getElementById('labBuilderSummary');
         if(!summaryEl) return;
         if(!builder.pegs.length){
-          summaryEl.textContent = 'No pegs yet. Add parts or load JSON.';
+          summaryEl.textContent = 'No pegs yet. Drag a part into the stage to begin.';
           summaryEl.style.color = '#facc15';
           return;
         }
-        let cursed=0; let steel=0; let out=0;
+        let cursed = 0; let steel = 0;
         for(const p of builder.pegs){
-          if(p.type==='cursed') cursed++;
-          else if(p.type==='steel') steel++;
-          if(p.x < 32 || p.x > W-32 || p.y < 120 || p.y > H-32) out++;
+          if(p.type === 'cursed') cursed++;
+          else if(p.type === 'steel') steel++;
         }
-        summaryEl.textContent = `Pegs: ${builder.pegs.length} • Cursed ${cursed} • Steel ${steel}` + (out>0 ? ` • ${out} outside arena` : '');
-        summaryEl.style.color = out>0 ? '#f87171' : '#facc15';
+        summaryEl.textContent = `Pegs: ${builder.pegs.length} • Cursed ${cursed} • Steel ${steel}`;
+        summaryEl.style.color = '#facc15';
       };
 
       const renderPlacements = () => {
@@ -2721,10 +2828,9 @@
         }
         placementList.innerHTML = builder.placements.map((placement, index) => {
           const label = escHTML(placement.name || placement.id);
-          const coord = `${Math.round(placement.x)}, ${Math.round(placement.y)}°${Math.round(placement.rotation)}`;
           return `<div class="score-item" style="gap:.4rem" data-index="${index}">
             <span>${label}</span>
-            <span>${coord} · ${placement.pegs.length}</span>
+            <span>${Math.round(placement.x)}, ${Math.round(placement.y)} · ${placement.pegs.length}</span>
             <button class="btn danger" data-remove="${index}" style="padding:.25rem .4rem;font-size:11px">✖</button>
           </div>`;
         }).join('');
@@ -2735,7 +2841,7 @@
             const placement = builder.placements[idx];
             if(!placement) return;
             builder.pegs = builder.pegs.filter(p => !placement.pegs.includes(p));
-            builder.placements.splice(idx,1);
+            builder.placements.splice(idx, 1);
             showMsg(`Removed ${placement.name || placement.id}.`);
             updateOutputs();
           });
@@ -2743,54 +2849,143 @@
       };
 
       const updateOutputs = () => {
-        syncTextarea();
-        updateSummary();
+        renderPreview();
         renderPlacements();
+        updateSummary();
+        syncTextarea();
+        if(stageHint){ stageHint.classList.toggle('hidden', builder.pegs.length>0); }
       };
 
-      if(partSelect){
-        partSelect.value = builder.selectedPartId || partSelect.value;
-        partSelect.addEventListener('change', () => {
-          builder.selectedPartId = partSelect.value;
-          updatePartDescription();
+      const setActivePart = (id) => {
+        builder.selectedPartId = id;
+        paletteList?.querySelectorAll('.lab-part').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.part === id);
         });
-        updatePartDescription();
-      }
-      if(partXInput) partXInput.value = Math.round(builder.lastPosition?.x ?? W/2);
-      if(partYInput) partYInput.value = Math.round(builder.lastPosition?.y ?? 320);
-      if(partRotInput) partRotInput.value = Math.round(builder.lastPosition?.rotation ?? 0);
+      };
 
-      nameInput?.addEventListener('input', () => {
-        customSessionName = nameInput.value;
-      });
-
-      document.getElementById('labAddPart')?.addEventListener('click', () => {
-        const part = getLevelPart(partSelect?.value || builder.selectedPartId);
-        if(!part){ showMsg('Pick a level part first.', '#f87171'); return; }
-        const x = Number(partXInput?.value);
-        const y = Number(partYInput?.value);
-        const rotation = Number(partRotInput?.value || 0);
-        if(!Number.isFinite(x) || !Number.isFinite(y)){
-          showMsg('Enter numeric placement values.', '#f87171');
-          return;
-        }
-        const rot = Number.isFinite(rotation) ? rotation : 0;
-        builder.selectedPartId = part.id;
-        builder.lastPosition = { x, y, rotation: rot };
-        const newPegs = instantiateLevelPart(part, { x, y, rotation: rot });
-        if(!newPegs.length){ showMsg('That part produced no pegs.', '#f87171'); return; }
+      const addPlacement = (part, x, y, rotation) => {
+        const newPegs = instantiateLevelPart(part, { x, y, rotation });
+        if(!newPegs.length) return false;
         builder.pegs.push(...newPegs);
-        builder.placements.push({ id: part.id, name: part.name, x, y, rotation: rot, pegs: newPegs });
-        showMsg(`Added ${part.name} (${newPegs.length} pegs).`);
-        updateOutputs();
+        builder.placements.push({ id: part.id, name: part.name, x, y, rotation, pegs: newPegs });
+        builder.lastPosition = { x, y, rotation };
+        return true;
+      };
+
+      const dropPartAt = (part, clientX, clientY, modifierEvent) => {
+        if(!part || !stageArea) return;
+        const rect = stageArea.getBoundingClientRect();
+        const relX = (clientX - rect.left) / rect.width;
+        const relY = (clientY - rect.top) / rect.height;
+        if(relX < 0 || relX > 1 || relY < 0 || relY > 1) return false;
+        let gameX = relX * W;
+        let gameY = relY * H;
+        if(snapToGrid || modifierEvent?.shiftKey){
+          const snap = 40;
+          gameX = Math.round(gameX / snap) * snap;
+          gameY = Math.round(gameY / snap) * snap;
+        }
+        const margin = 32;
+        gameX = Math.min(W - margin, Math.max(margin, gameX));
+        gameY = Math.min(H - margin, Math.max(120, gameY));
+        const rotation = builder.lastPosition.rotation;
+        if(addPlacement(part, gameX, gameY, rotation)){
+          showMsg(`Dropped ${part.name} at ${Math.round(gameX)}, ${Math.round(gameY)}.`);
+          return true;
+        }
+        return false;
+      };
+
+      const endDrag = (success) => {
+        if(!dragState) return;
+        dragState.ghost.remove();
+        document.removeEventListener('pointermove', dragState.onMove);
+        document.removeEventListener('pointerup', dragState.onUp, true);
+        stageFrame?.classList.remove('drop-ready');
+        document.body.style.userSelect = '';
+        if(!success){ showMsg('Drop inside the stage to place a part.', '#f87171'); }
+        dragState = null;
+      };
+
+      const startDrag = (part, originEvent) => {
+        if(!part) return;
+        const ghost = document.createElement('div');
+        ghost.className = 'lab-drag-ghost';
+        ghost.textContent = part.name;
+        document.body.appendChild(ghost);
+
+        const onMove = (e) => {
+          ghost.style.left = `${e.clientX}px`;
+          ghost.style.top = `${e.clientY}px`;
+          const rect = stageArea?.getBoundingClientRect();
+          if(rect){
+            const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
+            stageFrame?.classList.toggle('drop-ready', inside);
+          }
+        };
+
+        const onUp = (e) => {
+          const success = dropPartAt(part, e.clientX, e.clientY, e);
+          if(success){
+            setActivePart(part.id);
+            updateOutputs();
+          }
+          endDrag(success);
+        };
+
+        dragState = { part, ghost, onMove, onUp };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp, true);
+        onMove(originEvent);
+      };
+
+      paletteList?.querySelectorAll('.lab-part').forEach(btn => {
+        const id = btn.dataset.part;
+        if(!builder.selectedPartId) builder.selectedPartId = id;
+        btn.addEventListener('pointerdown', e => {
+          if(e.button !== 0) return;
+          e.preventDefault();
+          const part = getLevelPart(id);
+          setActivePart(id);
+          document.body.style.userSelect = 'none';
+          startDrag(part, e);
+        });
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          setActivePart(id);
+          showMsg(`Selected ${getLevelPart(id)?.name || 'part'}. Drag it into the stage.`);
+        });
+      });
+      setActivePart(builder.selectedPartId);
+
+      stageArea?.addEventListener('pointerdown', e => {
+        if(e.button !== 0) return;
+        const part = getLevelPart(builder.selectedPartId);
+        if(!part) return;
+        if(dropPartAt(part, e.clientX, e.clientY, e)){ updateOutputs(); }
       });
 
-      document.getElementById('labClearParts')?.addEventListener('click', () => {
-        builder.pegs = [];
-        builder.placements = [];
-        showMsg('Cleared builder layout.');
-        updateOutputs();
+      rotationRange?.addEventListener('input', e => {
+        const val = Number(e.target.value);
+        builder.lastPosition.rotation = Number.isFinite(val) ? val : 0;
+        updateRotationDisplay();
       });
+      document.getElementById('labRotLeft')?.addEventListener('click', () => {
+        builder.lastPosition.rotation = Math.max(-180, Math.round(builder.lastPosition.rotation - 15));
+        rotationRange.value = builder.lastPosition.rotation;
+        updateRotationDisplay();
+      });
+      document.getElementById('labRotRight')?.addEventListener('click', () => {
+        builder.lastPosition.rotation = Math.min(180, Math.round(builder.lastPosition.rotation + 15));
+        rotationRange.value = builder.lastPosition.rotation;
+        updateRotationDisplay();
+      });
+      snapToggle?.addEventListener('click', () => {
+        snapToGrid = !snapToGrid;
+        snapToggle.textContent = snapToGrid ? 'Snap: On' : 'Snap: Off';
+      });
+
+      nameInput?.addEventListener('input', () => { customSessionName = nameInput.value; });
 
       document.getElementById('labExport')?.addEventListener('click', () => {
         updateOutputs();
@@ -2842,21 +3037,27 @@
         syncHUDVisibility();
       });
 
+      document.getElementById('labClearParts')?.addEventListener('click', () => {
+        builder.pegs = [];
+        builder.placements = [];
+        showMsg('Cleared builder layout.');
+        updateOutputs();
+      });
+
       document.getElementById('labBack')?.addEventListener('click', () => startMenu());
 
-      const listEl = document.getElementById('labList');
-      listEl?.querySelectorAll('.setting-tile').forEach(tile => {
+      labList?.querySelectorAll('.lab-saved').forEach(tile => {
         const name = tile.dataset.name;
         tile.addEventListener('click', e => {
           const action = e.target?.dataset?.action;
           if(!action) return;
           e.stopPropagation();
-          if(action==='play'){
+          if(action === 'play'){
             startCustomLevel(name);
-          } else if(action==='delete'){
+          } else if(action === 'delete'){
             deleteCustomLevel(name);
-            render({ text: `Deleted ${name}.`, color:'#f87171' });
-          } else if(action==='copy'){
+            render({ text: `Deleted ${name}.`, color: '#f87171' });
+          } else if(action === 'copy'){
             const entry = customLevels[name];
             if(!entry) return;
             builder.pegs = deserializePegs(entry.pegs);
@@ -2870,6 +3071,7 @@
         });
       });
 
+      updateRotationDisplay();
       updateOutputs();
       if(pendingFlash){
         showMsg(pendingFlash.text, pendingFlash.color);
@@ -2878,6 +3080,77 @@
     };
 
     render();
+  }
+
+  function showCommunityLevels(){
+    stopGame();
+    state = STATE.MENU;
+
+    const cards = COMMUNITY_LEVELS.map(entry => `<div class="community-card" data-id="${entry.id}">
+        <div class="community-meta">
+          <strong>${escHTML(entry.name)}</strong>
+          <span>${escHTML(entry.difficulty || 'Unknown')} • ${escHTML(entry.description || '')}</span>
+        </div>
+        <div class="community-actions">
+          <button class="btn" data-action="play">▶ Play</button>
+          <button class="btn" data-action="json">⧉ Copy JSON</button>
+        </div>
+      </div>`).join('');
+
+    setOverlay(`
+      <div class="menu story" style="max-width:720px;width:min(96vw,720px);gap:18px">
+        <style id="communityStyles">
+          .community-card{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:16px;border:1px solid rgba(248,113,113,.24);background:rgba(18,18,26,.9)}
+          .community-meta strong{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#f8fafc}
+          .community-meta span{font-size:12px;color:rgba(226,232,240,.75)}
+          .community-actions{display:flex;gap:10px;flex-wrap:wrap}
+          .community-list{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto}
+        </style>
+        <div class="title">Community Levels</div>
+        <p>Curated ritual layouts from the wider carnival. Pick one to warm up or copy the JSON into your own lab.</p>
+        <div class="community-list" id="communityList">${cards}</div>
+        <div class="row" style="gap:12px"><button class="btn" id="communityBack">← Back</button></div>
+      </div>`);
+
+    const listEl = document.getElementById('communityList');
+    listEl?.querySelectorAll('.community-card').forEach(card => {
+      const id = card.dataset.id;
+      const entry = COMMUNITY_LEVELS.find(item => item.id === id);
+      if(!entry) return;
+      card.querySelector('[data-action="play"]')?.addEventListener('click', () => {
+        startCommunityLevel(entry);
+      });
+      card.querySelector('[data-action="json"]')?.addEventListener('click', () => {
+        const data = { version: VERSION, pegs: entry.build() };
+        const text = JSON.stringify(data, null, 2);
+        if(navigator.clipboard){
+          navigator.clipboard.writeText(text).then(() => {
+            showFloat('Copied JSON to clipboard', W/2, H/2, { color:'#facc15', glow:'#f97316', duration:90, rise:0, scale:1.1 });
+          }).catch(() => {
+            showFloat('Clipboard blocked', W/2, H/2, { color:'#f87171', glow:'#fb7185', duration:90, rise:0, scale:1.1 });
+          });
+        } else {
+          showFloat('Clipboard unavailable', W/2, H/2, { color:'#f87171', glow:'#fb7185', duration:90, rise:0, scale:1.1 });
+        }
+      });
+    });
+
+    document.getElementById('communityBack')?.addEventListener('click', () => startMenu());
+  }
+
+  function startCommunityLevel(entry){
+    if(!entry) return;
+    customSessionName = entry.name || 'Community';
+    freeplayLevel = 0;
+    gameMode = MODE.FREEPLAY;
+    tutorialShown = true;
+    setOverlay('');
+    state = STATE.PLAY;
+    world.score = 0;
+    loadCustomLayout(entry.build());
+    updateHUD();
+    world.aim.ready = true;
+    syncHUDVisibility();
   }
 
   function startMenu(){
@@ -2897,10 +3170,12 @@
       : '<button class="btn" id="freeplayBtn">🎯 Freeplay</button>';
     const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Beat level 1 in Story Run to unlock Freeplay.</div>' : '';
     const resumeLabel = settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS? `Continue (Level ${settings.storyProgress})` : '▶ Story Run';
-    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="labBtn">🧪 Level Lab</button><button class="btn" id="loreBtn">ℹ How to Play</button><button class="btn" id="creditsBtn">📜 Credits</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
+    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="communityBtn">🌐 Community</button><button class="btn" id="labBtn">🧪 Level Lab</button><button class="btn" id="loreBtn">ℹ How to Play</button><button class="btn" id="creditsBtn">📜 Credits</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
     document.getElementById('playBtn').onclick=()=> startGame();
     const freeBtn=document.getElementById('freeplayBtn');
     if(freeBtn && !freeplayLocked) freeBtn.onclick = () => showFreeplayMenu();
+    const communityBtn=document.getElementById('communityBtn');
+    if(communityBtn) communityBtn.onclick = () => showCommunityLevels();
     const labBtn=document.getElementById('labBtn');
     if(labBtn) labBtn.onclick = () => showLevelLab();
     const loreBtn=document.getElementById('loreBtn');
