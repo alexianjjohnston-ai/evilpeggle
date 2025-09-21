@@ -856,6 +856,7 @@
 
   function introSanctum(){
     const arr=[];
+<<<<<<< ours
     arr.push(...makeGrid(4,7,200,6,5));
     const cy = 360;
     arr.push(...ring(W/2, cy, 90, 6, 'cursed'));
@@ -1002,10 +1003,109 @@
     for(let i=0;i<6;i++){
       const a = i/6*Math.PI*2;
       arr.push(peg(W/2 + Math.cos(a)*240, cy + Math.sin(a)*120, i%2===0?'normal':'steel'));
+=======
+    arr.push(...makeGrid(3,6,220,6,6));
+    arr.push(peg(W/2, 320, 'cursed'));
+    for(let i=0;i<4;i++){
+      const x = W/2 + (i-1.5)*90;
+      arr.push(peg(x, 420 + Math.sin(i*0.9)*18, i%2===0?'cursed':'normal'));
     }
+    const halo = ring(W/2, 540, 120, 10);
+    halo.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
+    arr.push(...halo);
     return arr;
   }
 
+  function crescentGates(){
+    const arr=[];
+    for(let i=0;i<6;i++){
+      const t = -0.9 + i*(1.8/5);
+      const x = W/2 + Math.cos(t)*190;
+      const y = 280 + Math.sin(t)*90;
+      arr.push(peg(x,y, i%2===0?'cursed':'normal'));
+    }
+    for(let i=0;i<6;i++){
+      const t = -1 + i*(2/5);
+      const x = W/2 + Math.cos(t)*240;
+      const y = 420 + Math.sin(t)*110;
+      arr.push(peg(x,y, i%3===0?'cursed':'normal'));
+    }
+    for(let i=0;i<5;i++){
+      const x = 160 + i*160;
+      arr.push(peg(x, 360, i%2===1?'cursed':'normal'));
+    }
+    const moat = ring(W/2, 560, 140, 12);
+    moat.forEach((p,i)=>{ if(i%3===1) p.type='cursed'; });
+    arr.push(...moat);
+    return arr;
+  }
+
+  function ritualStar(){
+    const arr=[];
+    const cy = 360;
+    arr.push(peg(W/2, cy, 'cursed'));
+    for(let i=0;i<5;i++){
+      const a = -Math.PI/2 + i*(Math.PI*2/5);
+      arr.push(peg(W/2 + Math.cos(a)*110, cy + Math.sin(a)*110, 'cursed'));
+      arr.push(peg(W/2 + Math.cos(a+Math.PI/5)*180, cy + Math.sin(a+Math.PI/5)*180));
+    }
+    for(let i=0;i<4;i++){
+      const leftX = W/2 - 220 + i*110;
+      const rightX = W/2 + 220 - i*110;
+      const y = 260 + i*38;
+      arr.push(peg(leftX, y, i%2===0?'cursed':'normal'));
+      arr.push(peg(rightX, y, i%2===1?'cursed':'normal'));
+    }
+    const ringA = ring(W/2, cy+140, 150, 12);
+    ringA.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
+    arr.push(...ringA);
+    return arr;
+  }
+
+  function whisperSpiral(){
+    const arr = spiral(W/2, H*0.52, 10, 20, 72);
+    arr.forEach((p,i)=>{
+      if(i%6===0) p.type='cursed';
+      if(i%12===0) p.type='steel';
+    });
+    const guard = ring(W/2, H*0.52, 210, 14);
+    guard.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...guard);
+    return arr;
+  }
+
+  function terracedColumns(){
+    const arr=[];
+    arr.push(...columnsLayout(5,5,230,24,4));
+    for(let i=0;i<4;i++){
+      const x = 220 + i*110;
+      arr.push(peg(x, 340 + Math.sin(i*0.7)*26, i%2===0?'normal':'cursed'));
+      arr.push(peg(W - x, 380 + Math.cos(i*0.6)*26, i%2===0?'cursed':'normal'));
+    }
+    arr.push(peg(150, 260, 'steel'));
+    arr.push(peg(W-150, 300, 'steel'));
+    const base = ring(W/2, 560, 130, 12);
+    base.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...base);
+    return arr;
+  }
+
+  function tidalRun(){
+    const arr=[];
+    arr.push(...waveLayout(5,8,230,42,0.65));
+    for(let i=0;i<5;i++){
+      const y = 260 + i*60;
+      arr.push(peg(150, y, i%2===0?'cursed':'steel'));
+      arr.push(peg(W-150, y+30, i%2===1?'cursed':'steel'));
+>>>>>>> theirs
+    }
+    const basin = ring(W/2, 560, 120, 10);
+    basin.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...basin);
+    return arr;
+  }
+
+<<<<<<< ours
   function ziggurat(){
     const arr=[];
     const rows=7;
@@ -1109,9 +1209,255 @@
     arr.push(...swirl);
     arr.push(...scatterLayout(22, 0.3, 260, H-200));
     arr.push(...ring(W/2, 560, 160, 18, 'steel'));
+=======
+  function guardianEye(){
+    const arr=[];
+    const cy = 360;
+    arr.push(...ring(W/2, cy, 70, 6, 'cursed'));
+    const iris = ring(W/2, cy, 120, 10);
+    iris.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...iris);
+    for(let i=0;i<5;i++){
+      const offset = (i-2)*80;
+      arr.push(peg(W/2 + offset, 280 + Math.sin(i*0.7)*24, i%2===0?'normal':'cursed'));
+      arr.push(peg(W/2 + offset, 440 + Math.cos(i*0.7)*24, i%2===1?'normal':'cursed'));
+    }
+    for(let i=0;i<4;i++){
+      const x = 200 + i*180;
+      arr.push(peg(x, 220, 'steel'));
+      arr.push(peg(x, 540, 'steel'));
+    }
     return arr;
   }
 
+  function fractureField(){
+    const arr=[];
+    for(let i=0;i<6;i++){
+      const x = 140 + i*130;
+      arr.push(peg(x, 240 + i*40, i%2===0?'cursed':'normal'));
+      arr.push(peg(x, 420 - i*32, i%3===0?'steel':'normal'));
+    }
+    arr.push(peg(W/2-80, 340, 'steel'));
+    arr.push(peg(W/2+80, 340, 'steel'));
+    arr.push(peg(W/2, 340, 'cursed'));
+    for(let i=0;i<5;i++){
+      const x = 200 + i*140;
+      arr.push(peg(x, 520 + Math.sin(i*0.6)*32, i%2===0?'cursed':'normal'));
+    }
+    const guard = ring(W/2, 600, 150, 12);
+    guard.forEach((p,i)=>{ if(i%3===2) p.type='cursed'; });
+    arr.push(...guard);
+    return arr;
+  }
+
+  function twinSpirals(){
+    const tweak = arr => arr.forEach((p,i)=>{
+      if(i%5===0) p.type='cursed';
+      if(i%11===0) p.type='steel';
+    });
+    const left = spiral(W*0.36, 380, 9, 18, 60);
+    const right = spiral(W*0.64, 380, 9, 18, 60);
+    tweak(left); tweak(right);
+    const bridge=[];
+    for(let i=0;i<6;i++){
+      const x = W/2 + (i-2.5)*70;
+      bridge.push(peg(x, 520 + Math.sin(i*0.6)*24, i%2===0?'cursed':'normal'));
+    }
+    return left.concat(right, bridge);
+  }
+
+  function ramparts(){
+    const arr=[];
+    arr.push(...columnsLayout(6,5,240,26,3));
+    for(let i=0;i<6;i++){
+      const x = 140 + i*140;
+      arr.push(peg(x, 220, i%2===0?'steel':'normal'));
+      arr.push(peg(x, 540, i%2===1?'steel':'cursed'));
+    }
+    const brace = ring(W/2, 600, 170, 14);
+    brace.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
+    arr.push(...brace);
+    return arr;
+  }
+
+  function canyonRefuge(){
+    const arr=[];
+    arr.push(...columnsLayout(4,6,240,30,3));
+    for(let i=0;i<6;i++){
+      const offset = (i-2.5)*80;
+      arr.push(peg(W/2 + offset, 300 + Math.sin(i*0.5)*36, i%2===0?'cursed':'normal'));
+    }
+    for(let i=0;i<4;i++){
+      const x = 180 + i*160;
+      arr.push(peg(x, 520 + Math.cos(i*0.6)*30, i%2===0?'cursed':'normal'));
+    }
+    arr.push(peg(150, 260, 'steel'));
+    arr.push(peg(W-150, 320, 'steel'));
+    const basin = ring(W/2, 600, 150, 12);
+    basin.forEach((p,i)=>{ if(i%4===1) p.type='cursed'; });
+    arr.push(...basin);
+    return arr;
+  }
+
+  function blossomReborn(){
+    const arr=[];
+    const cy = 360;
+    arr.push(...ring(W/2, cy, 80, 6, 'cursed'));
+    const petals = ring(W/2, cy, 140, 10);
+    petals.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...petals);
+    for(let i=0;i<6;i++){
+      const a = i/6*Math.PI*2;
+      arr.push(peg(W/2 + Math.cos(a)*200, cy + Math.sin(a)*110, i%3===0?'steel':'normal'));
+    }
+    for(let i=0;i<6;i++){
+      const a = (i+0.5)/6*Math.PI*2;
+      arr.push(peg(W/2 + Math.cos(a)*250, cy + Math.sin(a)*160, i%2===0?'cursed':'normal'));
+    }
+    const roots = ring(W/2, 600, 170, 14);
+    roots.forEach((p,i)=>{ if(i%3===2) p.type='cursed'; });
+    arr.push(...roots);
+    return arr;
+  }
+
+  function ziggurat(){
+    const arr=[];
+    for(let r=0;r<6;r++){
+      const count = 7 - r;
+      const y = 240 + r*52;
+      const startX = W/2 - (count-1)*60;
+      for(let c=0;c<count;c++){
+        const x = startX + c*120;
+        const boundary = (c===0 || c===count-1);
+        const type = boundary || (r%2===0 && c%2===0) ? 'cursed' : 'normal';
+        arr.push(peg(x,y,type));
+      }
+    }
+    for(let i=0;i<4;i++) arr.push(peg(200 + i*160, 210, 'steel'));
+    const seal = ring(W/2, 620, 160, 14);
+    seal.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...seal);
+    return arr;
+  }
+
+  function pyre(){
+    const arr=[];
+    arr.push(...waveLayout(5,8,240,48,0.75));
+    for(let i=0;i<6;i++){
+      const y = 260 + i*56;
+      arr.push(peg(W/2, y, i%2===0?'cursed':'steel'));
+      arr.push(peg(W/2-150, y+18, i%3===0?'cursed':'normal'));
+      arr.push(peg(W/2+150, y-18, i%3===1?'cursed':'normal'));
+    }
+    const crown = ring(W/2, 620, 150, 12);
+    crown.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
+    arr.push(...crown);
+>>>>>>> theirs
+    return arr;
+  }
+
+  function bulwark(){
+    const arr=[];
+    const inner = ring(W/2, 380, 110, 10);
+    inner.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    const middle = ring(W/2, 380, 170, 14);
+    const outer = ring(W/2, 380, 230, 18, 'steel');
+    arr.push(...inner, ...middle, ...outer);
+    for(let i=0;i<8;i++){
+      const x = 140 + i*100;
+      arr.push(peg(x, 270 + Math.sin(i*0.45)*46, i%3===0?'cursed':'normal'));
+      arr.push(peg(x, 500 + Math.cos(i*0.5)*40, i%4===1?'steel':'normal'));
+    }
+    return arr;
+  }
+
+  function maelstrom(){
+    const arr = spiral(W/2, H*0.55, 15, 18, 110);
+    arr.forEach((p,i)=>{
+      if(i%5===0) p.type='cursed';
+      if(i%9===0) p.type='steel';
+    });
+    const guard = ring(W/2, H*0.55, 220, 18);
+    guard.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...guard);
+    arr.push(...ring(W/2, H*0.55, 250, 22, 'steel'));
+    return arr;
+  }
+
+  function jewelVault(){
+    const arr=[];
+    const centers=[
+      [W*0.28, 290], [W*0.5, 240], [W*0.72, 290],
+      [W*0.28, 430], [W*0.5, 480], [W*0.72, 430]
+    ];
+    centers.forEach(([cx,cy],idx)=>{
+      const offsets=[[0,-48],[48,0],[0,48],[-48,0]];
+      offsets.forEach((off,i)=>{
+        arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal'));
+      });
+      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
+    });
+    for(let i=0;i<5;i++){
+      const x = 160 + i*160;
+      arr.push(peg(x, 560, i%2===0?'cursed':'steel'));
+    }
+    const vault = ring(W/2, 620, 150, 12);
+    vault.forEach((p,i)=>{ if(i%3===2) p.type='cursed'; });
+    arr.push(...vault);
+    return arr;
+  }
+
+  function arcSanctum(){
+    const arr=[];
+    for(let i=0;i<8;i++){
+      const t = -1.1 + i*(2.2/7);
+      arr.push(peg(160 + i*80, 260 + Math.sin(t)*60, i%2===0?'cursed':'normal'));
+    }
+    for(let i=0;i<8;i++){
+      const t = -1 + i*(2/7);
+      arr.push(peg(160 + i*80, 420 + Math.cos(t)*70, i%3===0?'cursed':'normal'));
+    }
+    for(let i=0;i<5;i++){
+      const x = W/2 + (i-2)*90;
+      arr.push(peg(x, 520, i%2===0?'cursed':'steel'));
+    }
+    const halo = ring(W/2, 600, 180, 16);
+    halo.forEach((p,i)=>{ if(i%3===1) p.type='cursed'; });
+    arr.push(...halo);
+    return arr;
+  }
+
+  function impactField(){
+    const arr = scatterLayout(40, 0.28, 240, H-220);
+    for(let i=0;i<5;i++){
+      const x = 180 + i*140;
+      arr.push(peg(x, 300, i%2===0?'steel':'normal'));
+      arr.push(peg(x, 560, i%2===1?'cursed':'normal'));
+    }
+    arr.push(peg(W/2-120, 420, 'steel'));
+    arr.push(peg(W/2+120, 420, 'steel'));
+    const wards = ring(W/2, 620, 170, 14);
+    wards.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...wards);
+    return arr;
+  }
+
+  function grandFinale(){
+    const arr=[];
+    arr.push(...targetLayout(W/2, 340));
+    const swirl = doubleSpiral().filter((_,i)=>i%3===0).map(p=>({ ...p, y: p.y + 40 }));
+    swirl.forEach((p,i)=>{
+      if(i%4===0) p.type='cursed';
+      if(i%9===0) p.type='steel';
+    });
+    arr.push(...swirl);
+    arr.push(...scatterLayout(20, 0.35, 260, H-220));
+    const inner = ring(W/2, 620, 150, 14);
+    inner.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
+    arr.push(...inner);
+    arr.push(...ring(W/2, 620, 210, 18, 'steel'));
+    return arr;
+  }
   const LEVELS = [
     () => introSanctum(),
     () => crescentGates(),
