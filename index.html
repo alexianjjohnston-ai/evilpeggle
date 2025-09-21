@@ -34,16 +34,16 @@
     .hud-top,.hud-bottom{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
     .hud-bottom{align-items:flex-end}
     .hud-cluster{display:flex;gap:.6rem;flex-wrap:wrap}
-    .hud-chip{min-width:86px;padding:.55rem .75rem;border-radius:14px;border:1px solid rgba(248,113,113,.25);background:linear-gradient(180deg, rgba(30,31,35,.88), rgba(18,18,22,.95));box-shadow:0 12px 28px rgba(0,0,0,.48);pointer-events:none}
-    .hud-chip .label{display:block;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(248,113,113,.72);margin-bottom:2px}
-    .hud-chip .value{display:block;font-size:20px;font-weight:700;color:#fef2f2}
+    .hud-chip{min-width:86px;padding:.55rem .75rem;border-radius:14px;border:1px solid rgba(248,113,113,.35);background:linear-gradient(180deg, rgba(34,36,40,.9), rgba(18,18,22,.97));box-shadow:0 14px 30px rgba(0,0,0,.5);pointer-events:none}
+    .hud-chip .label{display:block;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(248,189,189,.9);margin-bottom:2px}
+    .hud-chip .value{display:block;font-size:22px;font-weight:700;color:#ffffff;text-shadow:0 0 12px rgba(248,113,113,.38)}
     .hud-chip.tight{min-width:64px}
     .hud-chip.wide{min-width:120px;text-align:center}
 
-    .fear-widget{pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.4rem;padding:.65rem 1.1rem;border-radius:18px;border:1px solid rgba(248,113,113,.65);background:linear-gradient(180deg, rgba(40,13,16,.94), rgba(18,7,9,.96));box-shadow:0 18px 40px rgba(248,113,113,.28)}
-    .fear-widget .label{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#fca5a5}
-    .fear-widget .tier{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#fecaca;opacity:.85}
-    .fear-widget .value{font-size:18px;font-weight:700;color:#fee2e2;text-shadow:0 0 18px rgba(248,113,113,.55)}
+    .fear-widget{pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.45rem;padding:.75rem 1.2rem;border-radius:18px;border:1px solid rgba(248,113,113,.75);background:linear-gradient(180deg, rgba(44,14,18,.96), rgba(22,8,10,.98));box-shadow:0 20px 46px rgba(248,113,113,.32)}
+    .fear-widget .label{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#fecaca}
+    .fear-widget .tier{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#ffe4e6;opacity:.95;text-shadow:0 0 14px rgba(248,113,113,.5)}
+    .fear-widget .value{font-size:20px;font-weight:700;color:#ffffff;text-shadow:0 0 20px rgba(248,113,113,.6)}
     .fear-bar{width:min(280px,50vw);height:12px;border-radius:999px;background:rgba(12,13,16,.9);border:1px solid rgba(248,113,113,.35);overflow:hidden;position:relative;box-shadow:inset 0 0 16px rgba(0,0,0,.4)}
     .fear-bar>i{position:absolute;inset:0;background:linear-gradient(90deg,#f87171,#ef4444,#b91c1c);transform-origin:left center;transform:scaleX(0);transition:transform .25s ease}
     .fear-widget.fear-0{border-color:rgba(248,113,113,.45)}
@@ -53,8 +53,8 @@
     .fear-widget.fear-4{border-color:rgba(239,68,68,.82);box-shadow:0 28px 72px rgba(239,68,68,.45);background:linear-gradient(180deg, rgba(74,10,14,.97), rgba(32,6,8,.99))}
 
     .progress-stack{display:flex;flex-direction:column;align-items:center;gap:.3rem;pointer-events:none}
-    .progress-stack .label{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(248,113,113,.72)}
-    .progress-bar{width:min(260px,48vw);height:10px;border-radius:999px;background:rgba(18,18,22,.85);border:1px solid rgba(248,113,113,.28);overflow:hidden;position:relative;box-shadow:inset 0 0 12px rgba(0,0,0,.5)}
+    .progress-stack .label{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(248,189,189,.85)}
+    .progress-bar{width:min(260px,48vw);height:10px;border-radius:999px;background:rgba(22,22,28,.88);border:1px solid rgba(248,113,113,.38);overflow:hidden;position:relative;box-shadow:inset 0 0 14px rgba(0,0,0,.55)}
     .progress-bar>i{position:absolute;inset:0;background:linear-gradient(90deg,#f87171,#ef4444,#991b1b);transform-origin:left center;transform:scaleX(0);transition:transform .3s ease}
 
     .overlay{position:absolute;inset:0;display:grid;place-items:center;color:#fef2ff;z-index:15}
@@ -66,18 +66,18 @@
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
     .flash{animation:flash 1.6s infinite}
 
-    .settings-layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(6,0,12,.82);backdrop-filter:blur(18px);z-index:60}
+    .settings-layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,8,10,.85);backdrop-filter:blur(18px);z-index:60}
     .settings-layer[hidden]{display:none}
-    .settings-panel{width:min(420px,calc(100% - 40px));max-height:calc(100% - 80px);overflow:auto;padding:24px 26px;border-radius:18px;background:rgba(15,3,24,.94);border:1px solid rgba(255,255,255,.14);box-shadow:0 28px 80px rgba(0,0,0,.65);display:flex;flex-direction:column;gap:18px;color:#fdeaff}
-    .settings-panel h2{margin:0;font:700 24px/1.1 "Cinzel", Trajan, serif;letter-spacing:.12em;text-transform:uppercase;text-align:center;text-shadow:0 0 18px rgba(244,114,182,.6)}
-    .settings-panel p{margin:0;font-size:13px;color:rgba(255,235,255,.7);text-align:center}
-    .settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
-    .setting-tile{padding:14px;border-radius:14px;background:rgba(24,8,32,.8);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 26px rgba(0,0,0,.35);display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px}
-    .setting-tile label{display:flex;flex-direction:column;gap:6px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#fbcfe8;font-size:11px}
-    .setting-tile span{font-weight:600;color:#ffe4f8}
-    .setting-tile small{display:block;margin-top:2px;font-size:11px;color:rgba(255,235,255,.58);letter-spacing:.03em;text-transform:none;font-weight:400}
-    .settings-panel input[type="text"]{width:100%;padding:.55rem .75rem;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:rgba(12,4,20,.92);color:#fef2ff;font-weight:600;letter-spacing:.04em;box-shadow:inset 0 0 12px rgba(0,0,0,.4)}
-    .settings-panel input[type="checkbox"], .settings-panel input[type="radio"]{width:20px;height:20px;accent-color:#f472b6}
+    .settings-panel{width:min(440px,calc(100% - 48px));max-height:calc(100% - 80px);overflow:auto;padding:28px 30px;border-radius:20px;background:linear-gradient(180deg, rgba(28,28,32,.96), rgba(18,18,22,.98));border:1px solid rgba(248,113,113,.45);box-shadow:0 32px 86px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:20px;color:#f9fafb}
+    .settings-panel h2{margin:0;font:700 24px/1.1 "Cinzel", Trajan, serif;letter-spacing:.12em;text-transform:uppercase;text-align:center;text-shadow:0 0 18px rgba(248,113,113,.55)}
+    .settings-panel p{margin:0;font-size:13px;color:rgba(248,189,189,.82);text-align:center}
+    .settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+    .setting-tile{padding:16px;border-radius:16px;background:linear-gradient(180deg, rgba(38,40,45,.9), rgba(22,24,28,.96));border:1px solid rgba(248,113,113,.28);box-shadow:0 16px 32px rgba(0,0,0,.35);display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:13px}
+    .setting-tile label{display:flex;flex-direction:column;gap:6px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#fca5a5;font-size:11px}
+    .setting-tile span{font-weight:600;color:#ffffff}
+    .setting-tile small{display:block;margin-top:2px;font-size:11px;color:rgba(248,189,189,.7);letter-spacing:.04em;text-transform:none;font-weight:400}
+    .settings-panel input[type="text"]{width:100%;padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.38);background:rgba(20,22,26,.95);color:#ffffff;font-weight:600;letter-spacing:.05em;box-shadow:inset 0 0 14px rgba(0,0,0,.45)}
+    .settings-panel input[type="checkbox"], .settings-panel input[type="radio"]{width:20px;height:20px;accent-color:#ef4444}
     .settings-actions{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .settings-actions .btn{flex:1;justify-content:center}
 
@@ -703,16 +703,16 @@
   }
 
   function spawnTutorialHints(){
-    setTimeout(()=> showFloat('Aim with the mouse, click to fire.', W/2, 210, { color:'#bfdbfe', glow:'#38bdf8', duration:90, rise:1 }), 300);
-    setTimeout(()=> showFloat('Target every cursed red peg to open the gate.', W/2, 250, { color:'#fecaca', glow:'#ef4444', duration:110, rise:1.1 }), 2200);
-    setTimeout(()=>{ const b=world.bucket; showFloat('Catch the bucket beast to regain an eyeball.', b.x + b.w/2, b.y-50, { color:'#bbf7d0', glow:'#34d399', duration:130, rise:1.05 }); }, 4200);
-    setTimeout(()=> showFloat('Fear fills faster with streaks—high fear unlocks power & horror.', W/2, 120, { color:'#f472b6', glow:'#c026d3', duration:130, rise:1.1 }), 6200);
+    setTimeout(()=> showFloat('Aim with the mouse, click to fire.', W/2, 210, { color:'#bfdbfe', glow:'#38bdf8', duration:140, rise:0.9 }), 600);
+    setTimeout(()=> showFloat('Target every cursed red peg to open the gate.', W/2, 250, { color:'#fecaca', glow:'#ef4444', duration:160, rise:1.05 }), 3600);
+    setTimeout(()=>{ const b=world.bucket; showFloat('Catch the bucket beast to regain an eyeball.', b.x + b.w/2, b.y-50, { color:'#bbf7d0', glow:'#22c55e', duration:180, rise:1.0 }); }, 7200);
+    setTimeout(()=> showFloat('Fear builds with streaks—high fear twists the stage & summons power.', W/2, 120, { color:'#f472b6', glow:'#c026d3', duration:200, rise:1.05 }), 11000);
   }
 
   // ===== Entities =====
   class Ball{
     constructor(x,y,vx,vy){ this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.r=14; this.dead=false; }
-    step(){ this.vy += world.gravity; this.vx *= world.friction; this.vy *= world.friction; this.x += this.vx; this.y += this.vy; if(this.x < this.r){ this.x=this.r; this.vx*=-1; } if(this.x > W-this.r){ this.x=W-this.r; this.vx*=-1; } if(this.y < this.r){ this.y=this.r; this.vy*=-1; } if(this.y > H-this.r){ this.y = H-this.r; this.vy *= -0.65; this.vx *= 0.98; if(Math.abs(this.vy)<2) this.dead=true; } this.collidePegs(); this.collideBucket(); }
+    step(){ this.vy += world.gravity; this.vx *= world.friction; this.vy *= world.friction; this.x += this.vx; this.y += this.vy; if(this.x < this.r){ this.x=this.r; this.vx*=-1; } if(this.x > W-this.r){ this.x=W-this.r; this.vx*=-1; } if(this.y < this.r){ this.y=this.r; this.vy*=-1; } if(this.y > H-this.r){ this.y = H-this.r; this.vy *= -0.45; this.vx *= 0.96; if(Math.abs(this.vy)<3.5) this.dead=true; } this.collidePegs(); this.collideBucket(); }
     collidePegs(){ for(const p of world.pegs){ if(p.hit) continue; const dx=this.x-p.x, dy=this.y-p.y; const d=Math.hypot(dx,dy); if(d < this.r + p.r){ const nx=dx/d, ny=dy/d; const vdot = this.vx*nx + this.vy*ny; // if skull, pierce through N pegs before bouncing
           if(world.ballType===POW.SKULL && world.pierce>0){ world.pierce--; hitPeg(p,true); continue; }
           this.vx -= 2*vdot*nx; this.vy -= 2*vdot*ny; this.x = p.x + (this.r+p.r+0.2)*nx; this.y = p.y + (this.r+p.r+0.2)*ny; hitPeg(p,false); } } }
@@ -850,9 +850,9 @@
     state = STATE.MENU;
     const name = escHTML(settings.playerName || 'Wanderer');
     const slides = [
-      { title:'Backstage Note', body:[`${name}, the headliner vanished and the crowd still chants.`, 'Every cursed peg locks their riffs in place — it’s up to you to finish the set.'] },
-      { title:'The Set', body:['Launch the haunted eyeball. Clear every crimson idol and keep the beat alive.', 'Catch the bucket beast to win another shot. Miss, and the pit eats your encore.'] },
-      { title:'Hype & Horror', body:['Streaks feed the Fear bar. As it climbs, the arena warps — lights, ghosts, and worse.','Stay steady under the reds. The band needs a closer.'] }
+      { title:'Backstage Note', body:[`${name}, the headliner’s gone and the crowd is restless.`, 'Each cursed peg holds the chorus hostage — crack them to keep the show alive.'] },
+      { title:'Encore Rules', body:['Launch the haunted eyeball and clear every crimson peg before you run out of shots.', 'Catch the bucket beast to recover a ball. Miss, and the pit will swallow you.'] },
+      { title:'Fear Meter', body:['Streaks fuel the Fear bar. Higher fear twists the arena with lights, whispers, and power.', 'Stay focused. The band’s finale depends on your aim.'] }
     ];
     const total = slides.length;
     let idx = 0;
