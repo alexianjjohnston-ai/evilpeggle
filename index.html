@@ -43,7 +43,9 @@
     .hud-chip .label{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(248,113,113,.8);margin-bottom:2px;text-shadow:0 0 6px rgba(0,0,0,.6)}
     .hud-chip .value{display:block;font-size:20px;font-weight:700;color:#ffffff;text-shadow:0 0 12px rgba(0,0,0,.6)}
     .hud-progress{display:flex;flex-direction:column;gap:4px;min-width:200px}
-    .hud-progress .progress-bar{width:100%;height:10px}
+    .hud-progress .progress-bar{position:relative;width:100%;height:16px;border-radius:999px;border:1px solid rgba(248,113,113,.35);background:rgba(15,15,20,.85);box-shadow:0 0 18px rgba(248,113,113,.18) inset,0 10px 24px rgba(0,0,0,.55)}
+    .hud-progress .progress-bar::before{content:"";position:absolute;inset:2px;border-radius:999px;background:repeating-linear-gradient(90deg, rgba(248,113,113,.12) 0 26px, rgba(15,15,20,.0) 26px 32px);mix-blend-mode:screen;opacity:.65;pointer-events:none}
+    .hud-progress .progress-bar>i{display:block;position:absolute;inset:2px;border-radius:999px;background:linear-gradient(90deg,#991b1b 0%,#ef4444 60%,#facc15 100%);box-shadow:0 0 16px rgba(248,113,113,.45),0 0 28px rgba(250,204,21,.32);transform-origin:left center;}
     .hud-chip.tight{min-width:64px}
     .hud-chip.wide{min-width:120px;text-align:center}
 
@@ -635,9 +637,10 @@
       if(!inner) return;
       const spans = [...inner.children];
       if(!spans.length) return;
-      const width = track.clientWidth;
-      const spanWidth = spans[0].clientWidth;
-      const offset = Math.max(0, index) * spanWidth;
+      const width = track.clientWidth || 1;
+      const spanWidth = spans[0].clientWidth || (width / spans.length);
+      const safeIndex = Math.max(0, Math.min(spans.length-1, index));
+      const offset = safeIndex * spanWidth;
       const target = offset - (width - spanWidth)/2;
       inner.style.transform = `translateX(${-target}px)`;
     };
@@ -1050,49 +1053,69 @@
   </svg>`);
   // Bucket monster (open/closed)
   Spr.bucketOpen = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='58' viewBox='0 0 150 58'>
+  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='62' viewBox='0 0 150 62'>
     <defs>
-      <radialGradient id='trapPit' cx='50%' cy='60%' r='70%'>
-        <stop offset='0%' stop-color='#220810'/>
-        <stop offset='60%' stop-color='#0b0408'/>
+      <radialGradient id='trapPit' cx='50%' cy='70%' r='78%'>
+        <stop offset='0%' stop-color='#1a0307'/>
+        <stop offset='65%' stop-color='#050103'/>
         <stop offset='100%' stop-color='rgba(0,0,0,0)'/>
       </radialGradient>
       <linearGradient id='trapSkinOpen' x1='0' y1='0' x2='0' y2='1'>
-        <stop offset='0%' stop-color='#4c0f16'/>
-        <stop offset='100%' stop-color='#0b0205'/>
+        <stop offset='0%' stop-color='#66131f'/>
+        <stop offset='100%' stop-color='#0a0204'/>
+      </linearGradient>
+      <linearGradient id='trapTongue' x1='0' y1='0' x2='0' y2='1'>
+        <stop offset='0%' stop-color='#f97316'/>
+        <stop offset='100%' stop-color='#7c2d12'/>
       </linearGradient>
     </defs>
-    <ellipse cx='75' cy='52' rx='70' ry='20' fill='url(#trapPit)' opacity='.7'/>
-    <path d='M12 18 C26 4, 124 4, 138 18 C142 46, 116 54, 75 56 C34 54, 8 46, 12 18 Z' fill='url(#trapSkinOpen)' stroke='#f43f5e' stroke-width='3'/>
-    <path d='M24 26 C36 14, 114 14, 126 26' stroke='#fb7185' stroke-width='4' stroke-linecap='round' fill='none'/>
-    <path d='M22 34 C38 48, 112 48, 128 34' stroke='#b91c1c' stroke-width='8' stroke-linecap='round' fill='none'/>
-    <g stroke='#1f0a0f' stroke-width='2.5' fill='#fef2f2'>
-      <path d='M26 24 L34 8 L42 24 Z'/>
-      <path d='M50 26 L58 6 L66 26 Z'/>
-      <path d='M84 26 L92 6 L100 26 Z'/>
-      <path d='M108 24 L116 8 L124 24 Z'/>
+    <ellipse cx='75' cy='54' rx='72' ry='22' fill='url(#trapPit)' opacity='.85'/>
+    <path d='M10 18 C26 2, 124 2, 140 18 C146 46, 122 60, 75 60 C28 60, 4 46, 10 18 Z' fill='url(#trapSkinOpen)' stroke='#f43f5e' stroke-width='3.2'/>
+    <path d='M18 30 C34 10, 116 10, 132 30' stroke='#fb7185' stroke-width='4' stroke-linecap='round' fill='none'/>
+    <path d='M24 36 C46 52, 104 52, 126 36' stroke='#b91c1c' stroke-width='8' stroke-linecap='round' fill='none'/>
+    <path d='M64 34 C78 32, 90 34, 90 42 C90 48, 80 54, 70 52 C58 50, 60 40, 64 34 Z' fill='url(#trapTongue)' stroke='#7c2d12' stroke-width='2'/>
+    <g stroke='#1f0a0f' stroke-width='3' fill='#fef2f2'>
+      <path d='M22 26 L32 6 L42 26 Z'/>
+      <path d='M48 28 L58 4 L68 28 Z'/>
+      <path d='M82 28 L92 4 L102 28 Z'/>
+      <path d='M108 26 L118 6 L128 26 Z'/>
     </g>
-    <circle cx='54' cy='20' r='7' fill='#f9fafb'/>
-    <circle cx='96' cy='20' r='7' fill='#f9fafb'/>
-    <circle cx='52' cy='20' r='3' fill='#0f172a'/>
-    <circle cx='94' cy='20' r='3' fill='#0f172a'/>
-    <path d='M48 40 Q75 48 102 40' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.6'/>
+    <g stroke='#1f0a0f' stroke-width='2.6' fill='#fef2f2'>
+      <path d='M34 44 L42 58 L50 44 Z'/>
+      <path d='M60 46 L68 60 L76 46 Z'/>
+      <path d='M88 46 L96 60 L104 46 Z'/>
+      <path d='M114 44 L122 58 L130 44 Z'/>
+    </g>
+    <path d='M48 44 Q76 56 104 44' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.65'/>
+    <path d='M58 30 C70 20, 80 20, 92 30' stroke='rgba(250,204,21,.4)' stroke-width='3' stroke-linecap='round' fill='none'/>
+    <circle cx='52' cy='20' r='9' fill='#f9fafb' stroke='#0f172a' stroke-width='2'/>
+    <circle cx='98' cy='20' r='9' fill='#f9fafb' stroke='#0f172a' stroke-width='2'/>
+    <circle cx='50' cy='20' r='3.5' fill='#0a0f1f'/>
+    <circle cx='96' cy='20' r='3.5' fill='#0a0f1f'/>
+    <path d='M46 50 Q52 60 64 56' stroke='#fb7185' stroke-width='2' fill='none' opacity='.7'/>
+    <path d='M84 56 Q96 60 102 50' stroke='#fb7185' stroke-width='2' fill='none' opacity='.7'/>
   </svg>`);
   Spr.bucketClosed = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='58' viewBox='0 0 150 58'>
+  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='62' viewBox='0 0 150 62'>
     <defs>
       <linearGradient id='trapSkinClosed' x1='0' y1='0' x2='0' y2='1'>
-        <stop offset='0%' stop-color='#2c0a10'/>
+        <stop offset='0%' stop-color='#330a11'/>
         <stop offset='100%' stop-color='#050104'/>
       </linearGradient>
     </defs>
-    <path d='M14 24 C24 6, 126 6, 136 24 C130 44, 118 50, 75 52 C32 50, 20 44, 14 24 Z' fill='url(#trapSkinClosed)' stroke='#7f1d1d' stroke-width='3'/>
-    <path d='M22 26 C40 20, 110 20, 128 26' stroke='#f87171' stroke-width='4' stroke-linecap='round' fill='none'/>
-    <path d='M36 34 C52 36, 98 36, 114 34' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.8'/>
-    <circle cx='56' cy='22' r='6' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
-    <circle cx='94' cy='22' r='6' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
-    <circle cx='54' cy='22' r='2.5' fill='#111827'/>
-    <circle cx='92' cy='22' r='2.5' fill='#111827'/>
+    <path d='M14 22 C24 4, 126 4, 136 22 C130 46, 112 56, 75 58 C38 56, 20 46, 14 22 Z' fill='url(#trapSkinClosed)' stroke='#7f1d1d' stroke-width='3'/>
+    <path d='M24 24 C42 18, 108 18, 126 24' stroke='#f87171' stroke-width='4' stroke-linecap='round' fill='none'/>
+    <path d='M34 34 C52 40, 98 40, 116 34' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.6'/>
+    <g stroke='#1f0a0f' stroke-width='2.6' fill='#fef2f2'>
+      <path d='M32 30 L40 16 L48 30 Z'/>
+      <path d='M58 30 L66 14 L74 30 Z'/>
+      <path d='M86 30 L94 14 L102 30 Z'/>
+      <path d='M112 30 L120 16 L128 30 Z'/>
+    </g>
+    <circle cx='58' cy='22' r='6.5' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
+    <circle cx='92' cy='22' r='6.5' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
+    <circle cx='56' cy='22' r='2.6' fill='#111827'/>
+    <circle cx='90' cy='22' r='2.6' fill='#111827'/>
   </svg>`);
 
   // ===== Game State =====
@@ -2004,7 +2027,7 @@
 
   // ===== Bucket =====
   function stepBucket(){ const b=world.bucket; b.x += b.vx; if(b.x<20||b.x+b.w>W-20){ b.vx*=-1; } if(b.anim>0){ b.anim--; if(b.anim<=0){ b.open=true; } } }
-  function drawBucket(){ const b=world.bucket; const spr = b.open? Spr.bucketOpen : Spr.bucketClosed; ctx.drawImage(spr, b.x, b.y, b.w, b.h); }
+  function drawBucket(){ const b=world.bucket; const spr = b.open? Spr.bucketOpen : Spr.bucketClosed; const wob = b.open? Math.sin(Date.now()*0.006)*2.5 : 0; ctx.drawImage(spr, b.x, b.y + wob, b.w, b.h); }
 
   // ===== UI Screens =====
   function setOverlay(html){
