@@ -1908,7 +1908,6 @@
       id: 'single-normal',
       name: 'Single • Normal',
       description: 'Place one normal peg exactly where you click.',
-      category: 'Singles',
       create(){
         return [{ x:0, y:0, type:'normal' }];
       }
@@ -1917,7 +1916,6 @@
       id: 'single-cursed',
       name: 'Single • Cursed',
       description: 'One cursed peg for precision adjustments.',
-      category: 'Singles',
       create(){
         return [{ x:0, y:0, type:'cursed' }];
       }
@@ -1926,7 +1924,6 @@
       id: 'single-steel',
       name: 'Single • Steel',
       description: 'Drop a lone steel peg to block angles.',
-      category: 'Singles',
       create(){
         return [{ x:0, y:0, type:'steel' }];
       }
@@ -1935,7 +1932,6 @@
       id: 'ring-tight',
       name: 'Ring • Tight',
       description: 'Eight-peg circle with alternating cursed pegs.',
-      category: 'Rings & Halos',
       create(){
         const radius = 70;
         const count = 8;
@@ -1956,7 +1952,6 @@
       id: 'ring-wide',
       name: 'Ring • Wide',
       description: 'Large halo, every third peg cursed for gated arenas.',
-      category: 'Rings & Halos',
       create(){
         const radius = 120;
         const count = 12;
@@ -1976,7 +1971,6 @@
       id: 'column-stack',
       name: 'Column Stack',
       description: 'Five-peg vertical column with cursed anchors.',
-      category: 'Stacks & Lines',
       create(){
         const pegs=[];
         for(let i=0;i<5;i++){
@@ -1990,7 +1984,6 @@
       id: 'bridge-line',
       name: 'Bridge Line',
       description: 'Seven-peg horizontal bridge, cursed on the ends.',
-      category: 'Stacks & Lines',
       create(){
         const spacing = 44;
         const pegs=[];
@@ -2008,7 +2001,6 @@
       id: 'burst-cluster',
       name: 'Burst Cluster',
       description: 'Tight cluster with a cursed core and radiating normals.',
-      category: 'Clusters',
       create(){
         return [
           { x:0, y:0, type:'cursed' },
@@ -2027,7 +2019,6 @@
       id: 'steel-gate',
       name: 'Steel Gate',
       description: 'Three steel pegs to force angle play.',
-      category: 'Utility',
       create(){
         return [
           { x:-60, y:0, type:'steel' },
@@ -2040,7 +2031,6 @@
       id: 'arc-fan',
       name: 'Arc Fan',
       description: 'Curved fan of pegs with a cursed center.',
-      category: 'Clusters',
       create(){
         const pegs=[];
         const radius = 90;
@@ -2061,7 +2051,6 @@
       id: 'triple-stack',
       name: 'Stack • Triple',
       description: 'Three vertical pegs with a cursed core.',
-      category: 'Stacks & Lines',
       create(){
         return [
           { x:0, y:-40, type:'normal' },
@@ -2074,7 +2063,6 @@
       id: 'quad-line',
       name: 'Line • Quad',
       description: 'Four horizontal pegs, edges cursed.',
-      category: 'Stacks & Lines',
       create(){
         const spacing = 44;
         return [
@@ -2089,7 +2077,6 @@
       id: 'diamond-cluster',
       name: 'Cluster • Diamond',
       description: 'Five-peg diamond with cursed center.',
-      category: 'Clusters',
       create(){
         return [
           { x:0, y:0, type:'cursed' },
@@ -2104,7 +2091,6 @@
       id: 'grid-nine',
       name: 'Grid • Nine',
       description: 'Three-by-three grid with corner steels.',
-      category: 'Clusters',
       create(){
         const pegs=[];
         const step = 46;
@@ -2121,7 +2107,6 @@
       id: 'spiral-mini',
       name: 'Spiral • Mini',
       description: 'A tight five-turn spiral starting cursed.',
-      category: 'Patterns',
       create(){
         const pegs=[];
         let radius = 18;
@@ -2142,7 +2127,6 @@
       id: 'bucket-guard',
       name: 'Bucket Guard',
       description: 'Two steels and a cursed peg to flank the bucket.',
-      category: 'Utility',
       create(){
         return [
           { x:-70, y:0, type:'steel' },
@@ -2155,7 +2139,6 @@
       id: 'stair-five',
       name: 'Stair • Five',
       description: 'Ascending staircase with cursed final step.',
-      category: 'Stacks & Lines',
       create(){
         const pegs=[];
         for(let i=0;i<5;i++){
@@ -2168,7 +2151,6 @@
       id: 'halo-wide',
       name: 'Halo • Wide',
       description: 'Twenty peg halo with cursed quadrants.',
-      category: 'Rings & Halos',
       create(){
         const pegs=[];
         const radius = 200;
@@ -3006,17 +2988,11 @@
           }).join('')
         : '<div class="warn">No custom levels saved yet. Drag parts into the stage to start a new ritual.</div>';
 
-      const paletteCategories = [...new Set(LEVEL_PARTS.map(part => part.category || 'Other'))];
-      const categoryOrder = ['Singles','Rings & Halos','Stacks & Lines','Clusters','Patterns','Utility','Other'];
-      paletteCategories.sort((a,b) => {
-        const ai = categoryOrder.indexOf(a);
-        const bi = categoryOrder.indexOf(b);
-        const aRank = ai === -1 ? categoryOrder.length : ai;
-        const bRank = bi === -1 ? categoryOrder.length : bi;
-        if(aRank !== bRank) return aRank - bRank;
-        return a.localeCompare(b);
-      });
-      const categoryOptions = paletteCategories.map(cat => `<option value="${escHTML(cat)}">${escHTML(cat)}</option>`).join('');
+      const palette = LEVEL_PARTS.map(part => `<button class="lab-part" data-part="${part.id}" draggable="false">
+          <span class="label">${escHTML(part.name)}</span>
+          <span class="hint">${escHTML(part.description)}</span>
+        </button>`).join('');
+
       const defaultName = escHTML(customSessionName || 'Custom Draft');
 
       setOverlay(`
@@ -3040,15 +3016,9 @@
             .lab-stage-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
             .lab-stage-controls label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(226,232,240,.7);display:flex;flex-direction:column;gap:4px}
             #labRotationRange{width:180px}
-            .lab-palette{display:flex;flex-direction:column;gap:12px;background:rgba(16,16,23,.9);border:1px solid rgba(248,113,113,.24);border-radius:18px;padding:16px;max-height:560px}
+            .lab-palette{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,23,.9);border:1px solid rgba(248,113,113,.24);border-radius:18px;padding:16px;max-height:560px}
             .lab-palette h3{margin:0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#fda4af}
-            .lab-palette-controls{display:flex;flex-wrap:wrap;gap:8px}
-            .lab-palette-controls input{flex:1 1 160px;padding:.45rem .7rem;border-radius:10px;border:1px solid rgba(148,163,184,.35);background:rgba(24,24,32,.94);color:#f8fafc;font-size:12px}
-            .lab-palette-controls select{flex:0 0 160px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(148,163,184,.35);background:rgba(24,24,32,.94);color:#f8fafc;font-size:12px}
-            .lab-palette-list{display:flex;flex-direction:column;gap:12px;max-height:420px;overflow:auto;padding-right:6px}
-            .lab-category{display:flex;flex-direction:column;gap:6px}
-            .lab-category h4{margin:0;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(248,189,189,.78)}
-            .lab-category-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+            .lab-palette-list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding-right:6px}
             .lab-part{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid rgba(248,113,113,.18);background:rgba(24,25,34,.85);color:#f8fafc;cursor:grab;text-align:left;transition:transform .12s,border-color .12s,background .12s}
             .lab-part:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.42);background:rgba(30,31,42,.9)}
             .lab-part.active{border-color:rgba(248,113,113,.75);background:rgba(45,24,32,.92)}
@@ -3068,14 +3038,7 @@
             <aside class="lab-palette" id="labPalette">
               <h3>Parts Palette</h3>
               <p style="margin:0;font-size:12px;color:rgba(226,232,240,.75)">Click to select, drag to place. Hold Shift while dragging to snap to a 40px grid.</p>
-              <div class="lab-palette-controls">
-                <input type="search" id="labPartSearch" placeholder="Search parts…">
-                <select id="labPartCategory">
-                  <option value="all">All categories</option>
-                  ${categoryOptions}
-                </select>
-              </div>
-              <div class="lab-palette-list" id="labPaletteList"></div>
+              <div class="lab-palette-list" id="labPaletteList">${palette}</div>
             </aside>
             <div class="lab-stage-shell">
               <div class="lab-stage-header">
@@ -3133,16 +3096,14 @@
           <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
         </div>`);
 
-      attach(entries, paletteCategories);
+      attach(entries);
     };
 
-    const attach = (entries, categories) => {
+    const attach = (entries) => {
       const nameInput = document.getElementById('labName');
       const dataInput = document.getElementById('labData');
       const messageEl = document.getElementById('labMessage');
       const paletteList = document.getElementById('labPaletteList');
-      const partSearchInput = document.getElementById('labPartSearch');
-      const partCategorySelect = document.getElementById('labPartCategory');
       const stageFrame = document.getElementById('labStageFrame');
       const stageArea = document.getElementById('labStageArea');
       const stageHint = document.getElementById('labStageHint');
@@ -3155,8 +3116,6 @@
       const labList = document.getElementById('labList');
 
       let snapToGrid = false;
-      let partSearchTerm = '';
-      let partCategoryFilter = 'all';
       let dragState = null;
 
       const showMsg = (msg, color='#facc15') => {
@@ -3274,65 +3233,9 @@
 
       const setActivePart = (id) => {
         builder.selectedPartId = id;
-        if(paletteList){
-          paletteList.querySelectorAll('.lab-part').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.part === id);
-          });
-        }
-      };
-
-      const bindPaletteButtons = () => {
         paletteList?.querySelectorAll('.lab-part').forEach(btn => {
-          const id = btn.dataset.part;
-          btn.addEventListener('pointerdown', e => {
-            if(e.button !== 0) return;
-            e.preventDefault();
-            const part = getLevelPart(id);
-            setActivePart(id);
-            document.body.style.userSelect = 'none';
-            startDrag(part, e);
-          });
-          btn.addEventListener('click', e => {
-            e.preventDefault();
-            setActivePart(id);
-            showMsg(`Selected ${getLevelPart(id)?.name || 'part'}. Drag it into the stage.`);
-          });
+          btn.classList.toggle('active', btn.dataset.part === id);
         });
-      };
-
-      const renderPalette = () => {
-        if(!paletteList) return;
-        const term = partSearchTerm.trim().toLowerCase();
-        const filtered = LEVEL_PARTS.filter(part => {
-          const cat = part.category || 'Other';
-          if(partCategoryFilter !== 'all' && cat !== partCategoryFilter) return false;
-          if(term && !(part.name.toLowerCase().includes(term) || part.description.toLowerCase().includes(term))) return false;
-          return true;
-        });
-        if(!filtered.length){
-          paletteList.innerHTML = '<div class="warn">No matching parts yet.</div>';
-          return;
-        }
-        if(!filtered.some(part => part.id === builder.selectedPartId)){
-          builder.selectedPartId = filtered[0].id;
-        }
-        const grouped = new Map();
-        filtered.forEach(part => {
-          const cat = part.category || 'Other';
-          if(!grouped.has(cat)) grouped.set(cat, []);
-          grouped.get(cat).push(part);
-        });
-        const categoryList = Array.isArray(categories) ? categories : [];
-        const orderedCats = [...categoryList.filter(cat => grouped.has(cat)), ...[...grouped.keys()].filter(cat => !categoryList.includes(cat))];
-        let html = '';
-        orderedCats.forEach(cat => {
-          const parts = grouped.get(cat);
-          const cards = parts.map(part => `<button class="lab-part" data-part="${part.id}" draggable="false"><span class="label">${escHTML(part.name)}</span><span class="hint">${escHTML(part.description)}</span></button>`).join('');
-          html += `<div class="lab-category"><h4>${escHTML(cat)}</h4><div class="lab-category-grid">${cards}</div></div>`;
-        });
-        paletteList.innerHTML = html;
-        bindPaletteButtons();
-        setActivePart(builder.selectedPartId);
       };
 
       const addPlacement = (part, x, y, rotation) => {
@@ -3411,19 +3314,24 @@
         onMove(originEvent);
       };
 
-      partSearchInput?.addEventListener('input', e => {
-        partSearchTerm = e.target.value || '';
-        renderPalette();
+      paletteList?.querySelectorAll('.lab-part').forEach(btn => {
+        const id = btn.dataset.part;
+        if(!builder.selectedPartId) builder.selectedPartId = id;
+        btn.addEventListener('pointerdown', e => {
+          if(e.button !== 0) return;
+          e.preventDefault();
+          const part = getLevelPart(id);
+          setActivePart(id);
+          document.body.style.userSelect = 'none';
+          startDrag(part, e);
+        });
+        btn.addEventListener('click', e => {
+          e.preventDefault();
+          setActivePart(id);
+          showMsg(`Selected ${getLevelPart(id)?.name || 'part'}. Drag it into the stage.`);
+        });
       });
-
-      partCategorySelect?.addEventListener('change', e => {
-        partCategoryFilter = e.target.value || 'all';
-        renderPalette();
-      });
-
-      if(partSearchInput) partSearchInput.value = partSearchTerm;
-      if(partCategorySelect) partCategorySelect.value = partCategoryFilter;
-      renderPalette();
+      setActivePart(builder.selectedPartId);
 
       stageArea?.addEventListener('pointerdown', e => {
         if(e.button !== 0) return;
