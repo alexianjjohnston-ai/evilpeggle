@@ -344,6 +344,8 @@
   let communityUserLevels = [];
   let communityLikes = loadCommunityLikes();
   let communityFlashMessage = null;
+  let communitySortMode = 'likes-desc';
+  let communitySearchQuery = '';
 
   function setCommunityFlash(text, color='#facc15'){
     communityFlashMessage = { text, color };
@@ -527,11 +529,26 @@
   }
 
   function getCommunityLevels(){
-    const builtin = BUILTIN_COMMUNITY_LEVELS.map(entry => ({ ...entry, source:'builtin' }));
-    const customs = communityUserLevels
-      .slice()
-      .sort((a,b)=> (b.added||0) - (a.added||0))
-      .map(entry => ({ ...entry, source:'user', baseLikes: entry.baseLikes || 0 }));
+    const builtin = BUILTIN_COMMUNITY_LEVELS.map(entry => ({
+      id: entry.id,
+      name: entry.name,
+      description: entry.description,
+      difficulty: entry.difficulty,
+      baseLikes: Number(entry.baseLikes) || 0,
+      build: entry.build,
+      source: 'builtin',
+      added: Number(entry.added) || 0
+    }));
+    const customs = communityUserLevels.map(entry => ({
+      id: entry.id,
+      name: entry.name,
+      description: entry.description,
+      difficulty: entry.difficulty,
+      pegs: entry.pegs,
+      baseLikes: Number(entry.baseLikes) || 0,
+      source: 'user',
+      added: Number(entry.added) || 0
+    }));
     return [...builtin, ...customs];
   }
 
@@ -2200,7 +2217,7 @@
       name: 'Ritual Embers',
       difficulty: 'Medium',
       description: 'A condensed Ember Bloom remix with tighter cursed rings.',
-      baseLikes: 24,
+      baseLikes: 0,
       build: () => serializePegs(emberBloom())
     },
     {
@@ -2208,7 +2225,7 @@
       name: 'Glasswork Labyrinth',
       difficulty: 'Hard',
       description: 'Steel gates guard alternating corridors—watch your ricochets.',
-      baseLikes: 31,
+      baseLikes: 0,
       build: () => serializePegs(labyrinthCage())
     },
     {
@@ -2216,7 +2233,7 @@
       name: 'Voided Spiral',
       difficulty: 'Spicy',
       description: 'A twin spiral packed with cursed pegs and sparse safe shots.',
-      baseLikes: 18,
+      baseLikes: 0,
       build: () => serializePegs(whisperSpiral())
     }
   ];
@@ -2983,7 +3000,12 @@
           <style id="labStyles">
             .level-lab{align-items:stretch}
             .lab-grid{display:grid;grid-template-columns:300px 1fr;gap:18px;width:100%;align-items:start}
-            .lab-stage-shell{background:rgba(12,13,20,.85);border:1px solid rgba(248,113,113,.28);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+            .lab-stage-shell{background:rgba(12,13,20,.85);border:1px solid rgba(248,113,113,.28);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;min-height:0}
+            .lab-stage-header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start}
+            .lab-stage-heading span{display:block;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#fda4af}
+            .lab-stage-heading small{display:block;font-size:11px;color:rgba(226,232,240,.7);letter-spacing:.04em;margin-top:4px}
+            .lab-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+            .lab-actions .btn{padding:.45rem .8rem}
             .lab-stage-frame{position:relative;border-radius:14px;overflow:hidden;background:#080910;border:1px solid rgba(148,163,184,.25)}
             #labStageArea{position:relative;width:100%;aspect-ratio:${W}/${H};display:flex;align-items:center;justify-content:center;touch-action:none}
             #labStageArea canvas{width:100%;height:100%;display:block}
@@ -2994,14 +3016,15 @@
             .lab-stage-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
             .lab-stage-controls label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(226,232,240,.7);display:flex;flex-direction:column;gap:4px}
             #labRotationRange{width:180px}
-            .lab-palette{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,23,.9);border:1px solid rgba(248,113,113,.24);border-radius:18px;padding:16px;max-height:560px;overflow:auto}
+            .lab-palette{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,23,.9);border:1px solid rgba(248,113,113,.24);border-radius:18px;padding:16px;max-height:560px}
             .lab-palette h3{margin:0;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#fda4af}
+            .lab-palette-list{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow:auto;padding-right:6px}
             .lab-part{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid rgba(248,113,113,.18);background:rgba(24,25,34,.85);color:#f8fafc;cursor:grab;text-align:left;transition:transform .12s,border-color .12s,background .12s}
             .lab-part:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.42);background:rgba(30,31,42,.9)}
             .lab-part.active{border-color:rgba(248,113,113,.75);background:rgba(45,24,32,.92)}
             .lab-part .label{font-size:13px;font-weight:600;letter-spacing:.06em}
             .lab-part .hint{font-size:11px;color:rgba(226,232,240,.7)}
-            .lab-saved{display:flex;flex-direction:column;gap:8px;border:1px solid rgba(148,163,184,.25);border-radius:14px;padding:12px;background:rgba(17,18,24,.82)}
+            .lab-saved{display:flex;flex-direction:column;gap:8px;border:1px solid rgba(148,163,184,.25);background:rgba(17,18,24,.82);border-radius:14px;padding:12px}
             .lab-saved-meta strong{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#f8fafc}
             .lab-saved-meta span{font-size:11px;color:rgba(226,232,240,.6)}
             .lab-saved-actions{display:flex;gap:8px;flex-wrap:wrap}
@@ -3010,14 +3033,27 @@
             @media (max-width:980px){.lab-grid{grid-template-columns:1fr}}
           </style>
           <div class="title">Level Lab</div>
-          <p>Drag ritual parts onto the stage, rotate as needed, then export or save your custom horrors.</p>
+          <p class="lab-intro" style="margin:0;font-size:13px;color:rgba(226,232,240,.8)">Drag ritual parts onto the stage. Quick actions keep save, export, and play within reach while you iterate.</p>
           <div class="lab-grid">
             <aside class="lab-palette" id="labPalette">
               <h3>Parts Palette</h3>
               <p style="margin:0;font-size:12px;color:rgba(226,232,240,.75)">Click to select, drag to place. Hold Shift while dragging to snap to a 40px grid.</p>
-              <div id="labPaletteList" style="display:flex;flex-direction:column;gap:10px">${palette}</div>
+              <div class="lab-palette-list" id="labPaletteList">${palette}</div>
             </aside>
             <div class="lab-stage-shell">
+              <div class="lab-stage-header">
+                <div class="lab-stage-heading">
+                  <span>Stage Preview</span>
+                  <small>Shift+drag to snap • Q/E rotate 15°</small>
+                </div>
+                <div class="lab-actions">
+                  <button class="btn good" id="labSave">💾 Save</button>
+                  <button class="btn" id="labExport">⧉ Copy JSON</button>
+                  <button class="btn" id="labDownload">⬇ Download</button>
+                  <button class="btn" id="labLoadJson">⬆ Load JSON</button>
+                  <button class="btn" id="labPlayTemp">▶ Play</button>
+                </div>
+              </div>
               <div class="lab-stage-frame" id="labStageFrame">
                 <div id="labStageArea">
                   <canvas id="labPreview" width="${PREVIEW_WIDTH}" height="${PREVIEW_HEIGHT}"></canvas>
@@ -3049,18 +3085,12 @@
           </section>
           <section class="settings-section" style="gap:12px">
             <h3>Export &amp; Share</h3>
+            <p style="margin:0;font-size:12px;color:rgba(226,232,240,.75)">Copy or download JSON with the quick actions above. Paste JSON here and press “⬆ Load JSON” to import.</p>
             <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fda4af">
               Level Name
               <input type="text" id="labName" value="${defaultName}" maxlength="48" style="padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(20,20,26,.92);color:#f8fafc;font-weight:600">
             </label>
             <textarea id="labData" spellcheck="false" placeholder="JSON layout appears here after adding parts or importing." style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
-            <div class="settings-actions minor" style="gap:8px">
-              <button class="btn" id="labExport">⧉ Export Builder</button>
-              <button class="btn" id="labLoadJson">⬆ Load JSON</button>
-              <button class="btn" id="labDownload">⬇ Download</button>
-              <button class="btn good" id="labSave">💾 Save</button>
-              <button class="btn" id="labPlayTemp">▶ Play Once</button>
-            </div>
             <div class="warn" id="labMessage"></div>
           </section>
           <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
@@ -3334,7 +3364,16 @@
 
       document.getElementById('labExport')?.addEventListener('click', () => {
         updateOutputs();
-        showMsg('Builder JSON refreshed.');
+        const jsonText = dataInput?.value || '';
+        if(navigator.clipboard){
+          navigator.clipboard.writeText(jsonText).then(() => {
+            showMsg('Copied JSON to clipboard.');
+          }).catch(() => {
+            showMsg('Clipboard blocked by browser.', '#f87171');
+          });
+        } else {
+          showMsg('Clipboard unavailable; JSON refreshed below.');
+        }
       });
 
       document.getElementById('labLoadJson')?.addEventListener('click', () => {
@@ -3431,15 +3470,111 @@
     stopGame();
     state = STATE.MENU;
 
-    const levels = getCommunityLevels();
-    const cards = levels.length
-      ? levels.map(entry => {
-          const liked = isCommunityLiked(entry.id);
-          const likeLabel = liked ? `♥ Liked (${getCommunityLikeCount(entry)})` : `♡ Like (${getCommunityLikeCount(entry)})`;
-          const sourceLabel = entry.source === 'user' ? 'User Upload' : 'Curated';
-          const pegCount = getCommunityPegCount(entry);
-          const removeButton = entry.source === 'user' ? '<button class="btn danger" data-action="remove">✖ Delete</button>' : '';
-          return `<div class="community-card" data-id="${entry.id}" data-source="${entry.source}">
+    const sortOptions = [
+      { value:'likes-desc', label:'Most liked' },
+      { value:'likes-asc', label:'Least liked' },
+      { value:'newest', label:'Newest' },
+      { value:'oldest', label:'Oldest' },
+      { value:'title', label:'Title A–Z' }
+    ];
+    const sortMarkup = sortOptions.map(opt => `<option value="${opt.value}" ${opt.value===communitySortMode ? 'selected' : ''}>${opt.label}</option>`).join('');
+    const flashHtml = communityFlashMessage ? `<div class="warn" id="communityFlash" style="color:${communityFlashMessage.color}">${communityFlashMessage.text}</div>` : '';
+    communityFlashMessage = null;
+
+    setOverlay(`
+      <div class="menu story" style="max-width:880px;width:min(96vw,880px);gap:18px">
+        <style id="communityStyles">
+          .community-card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;border:1px solid rgba(248,113,113,.24);background:rgba(18,18,26,.9)}
+          .community-meta strong{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#f8fafc}
+          .community-meta span{font-size:12px;color:rgba(226,232,240,.75)}
+          .community-meta p{margin:4px 0 0;font-size:12px;color:rgba(226,232,240,.7)}
+          .community-actions{display:flex;gap:10px;flex-wrap:wrap}
+          .community-list{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto;padding-right:6px}
+          .community-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+          .community-controls input{flex:1 1 220px;padding:.5rem .75rem;border-radius:12px;border:1px solid rgba(248,113,113,.24);background:rgba(24,24,32,.9);color:#f8fafc;font-size:13px}
+          .community-controls select{flex:0 0 180px;padding:.5rem .6rem;border-radius:12px;border:1px solid rgba(248,113,113,.24);background:rgba(24,24,32,.9);color:#f8fafc;font-size:13px}
+          .community-upload{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,24,.88);border:1px solid rgba(248,113,113,.24);border-radius:16px;padding:16px}
+          .community-upload-grid{display:flex;gap:10px;flex-wrap:wrap}
+          .community-upload-file{position:relative;display:inline-flex;align-items:center;gap:8px;padding:.55rem 1rem;border-radius:12px;border:1px solid rgba(248,113,113,.32);background:rgba(28,29,38,.92);color:#f8fafc;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+          .community-upload-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+          #communityPaste{min-height:80px;padding:10px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,26,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px}
+          #communityMessage{min-height:16px;display:block}
+        </style>
+        <div class="title">Community Levels</div>
+        <p>Curated rituals and player uploads. Drop new horrors here, then filter or sort to find your favourites.</p>
+        <section class="community-upload">
+          <div class="community-upload-grid">
+            <label class="community-upload-file">⬆ Choose JSON<input type="file" id="communityUpload" accept="application/json"></label>
+            <button class="btn" id="communityPasteAdd">➕ Add From Paste</button>
+          </div>
+          <textarea id="communityPaste" placeholder='Paste a JSON blob such as {"name":"Night Run","pegs":[...]}'></textarea>
+          <small class="warn" id="communityMessage"></small>
+          ${flashHtml}
+        </section>
+        <section class="community-controls">
+          <input type="search" id="communitySearch" placeholder="Search by title…" value="${escHTML(communitySearchQuery)}">
+          <select id="communitySort">${sortMarkup}</select>
+          <button class="btn" id="communityClear">✖ Clear</button>
+        </section>
+        <div class="community-list" id="communityList"></div>
+        <div class="row" style="gap:12px"><button class="btn" id="communityBack">← Back</button></div>
+      </div>`);
+
+    const messageEl = document.getElementById('communityMessage');
+    const listEl = document.getElementById('communityList');
+    const searchInput = document.getElementById('communitySearch');
+    const sortSelect = document.getElementById('communitySort');
+    const clearBtn = document.getElementById('communityClear');
+
+    const showMessage = (msg, color='#facc15') => {
+      if(messageEl){
+        messageEl.textContent = msg;
+        messageEl.style.color = color;
+      }
+    };
+
+    if(searchInput) searchInput.value = communitySearchQuery;
+    if(sortSelect) sortSelect.value = communitySortMode;
+
+    const getFilteredLevels = () => {
+      let levels = getCommunityLevels();
+      if(communitySearchQuery){
+        const term = communitySearchQuery.trim().toLowerCase();
+        levels = levels.filter(entry => entry.name.toLowerCase().includes(term));
+      }
+      const byLikes = (a,b) => getCommunityLikeCount(b) - getCommunityLikeCount(a);
+      switch(communitySortMode){
+        case 'likes-asc':
+          levels = levels.slice().sort((a,b)=> getCommunityLikeCount(a) - getCommunityLikeCount(b));
+          break;
+        case 'newest':
+          levels = levels.slice().sort((a,b)=> (b.added||0) - (a.added||0));
+          break;
+        case 'oldest':
+          levels = levels.slice().sort((a,b)=> (a.added||0) - (b.added||0));
+          break;
+        case 'title':
+          levels = levels.slice().sort((a,b)=> a.name.localeCompare(b.name));
+          break;
+        default:
+          levels = levels.slice().sort(byLikes);
+      }
+      return levels;
+    };
+
+    const renderList = () => {
+      const levels = getFilteredLevels();
+      if(!levels.length){
+        listEl.innerHTML = '<div class="warn">No levels match this filter yet.</div>';
+        return;
+      }
+      listEl.innerHTML = levels.map(entry => {
+        const liked = isCommunityLiked(entry.id);
+        const likeLabel = liked ? `♥ Liked (${getCommunityLikeCount(entry)})` : `♡ Like (${getCommunityLikeCount(entry)})`;
+        const sourceLabel = entry.source === 'user' ? 'User Upload' : 'Curated';
+        const pegCount = getCommunityPegCount(entry);
+        const removeButton = entry.source === 'user' ? '<button class="btn danger" data-action="remove">✖ Delete</button>' : '';
+        return `<div class="community-card" data-id="${entry.id}" data-source="${entry.source}">
             <div class="community-meta">
               <strong>${escHTML(entry.name)}</strong>
               <span>${escHTML(entry.difficulty || 'Custom')} • ${sourceLabel} • ${pegCount} pegs</span>
@@ -3452,50 +3587,25 @@
               ${removeButton}
             </div>
           </div>`;
-        }).join('')
-      : '<div class="warn">No community levels yet. Upload a JSON to seed the carnival.</div>';
-
-    const flashHtml = communityFlashMessage ? `<div class="warn" id="communityFlash" style="color:${communityFlashMessage.color}">${communityFlashMessage.text}</div>` : '';
-    communityFlashMessage = null;
-
-    setOverlay(`
-      <div class="menu story" style="max-width:840px;width:min(96vw,840px);gap:18px">
-        <style id="communityStyles">
-          .community-card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;border:1px solid rgba(248,113,113,.24);background:rgba(18,18,26,.9)}
-          .community-meta strong{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#f8fafc}
-          .community-meta span{font-size:12px;color:rgba(226,232,240,.75)}
-          .community-meta p{margin:4px 0 0;font-size:12px;color:rgba(226,232,240,.7)}
-          .community-actions{display:flex;gap:10px;flex-wrap:wrap}
-          .community-list{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto;padding-right:6px}
-          .community-upload{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,24,.88);border:1px solid rgba(248,113,113,.24);border-radius:16px;padding:16px}
-          .community-upload-grid{display:flex;gap:10px;flex-wrap:wrap}
-          .community-upload-file{position:relative;display:inline-flex;align-items:center;gap:8px;padding:.55rem 1rem;border-radius:12px;border:1px solid rgba(248,113,113,.32);background:rgba(28,29,38,.92);color:#f8fafc;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
-          .community-upload-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
-          #communityPaste{min-height:80px;padding:10px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,26,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px}
-          #communityMessage{min-height:16px;display:block}
-        </style>
-        <div class="title">Community Levels</div>
-        <p>Curated rituals and player uploads. Drop new horrors here or favorite the sets you love.</p>
-        <section class="community-upload">
-          <div class="community-upload-grid">
-            <label class="community-upload-file">⬆ Choose JSON<input type="file" id="communityUpload" accept="application/json"></label>
-            <button class="btn" id="communityPasteAdd">➕ Add From Paste</button>
-          </div>
-          <textarea id="communityPaste" placeholder='Paste a JSON blob such as {"name":"Night Run","pegs":[...]}'></textarea>
-          <small class="warn" id="communityMessage"></small>
-          ${flashHtml}
-        </section>
-        <div class="community-list" id="communityList">${cards}</div>
-        <div class="row" style="gap:12px"><button class="btn" id="communityBack">← Back</button></div>
-      </div>`);
-
-    const messageEl = document.getElementById('communityMessage');
-    const showMessage = (msg, color='#facc15') => {
-      if(messageEl){
-        messageEl.textContent = msg;
-        messageEl.style.color = color;
-      }
+      }).join('');
     };
+
+    searchInput?.addEventListener('input', e => {
+      communitySearchQuery = e.target.value || '';
+      renderList();
+    });
+
+    sortSelect?.addEventListener('change', e => {
+      const value = e.target.value;
+      communitySortMode = sortOptions.some(opt => opt.value === value) ? value : 'likes-desc';
+      renderList();
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      communitySearchQuery = '';
+      if(searchInput) searchInput.value = '';
+      renderList();
+    });
 
     const uploadInput = document.getElementById('communityUpload');
     uploadInput?.addEventListener('change', e => {
@@ -3546,7 +3656,6 @@
       }
     });
 
-    const listEl = document.getElementById('communityList');
     listEl?.addEventListener('click', e => {
       const button = e.target.closest('button[data-action]');
       if(!button) return;
@@ -3559,18 +3668,20 @@
       if(action === 'play'){
         startCommunityLevel(entry);
       } else if(action === 'json'){
-        const data = { version: VERSION, pegs: entry.pegs || (typeof entry.build === 'function' ? entry.build() : []) };
-        const text = JSON.stringify(data, null, 2);
+        const payload = { version: VERSION, pegs: entry.pegs || (typeof entry.build === 'function' ? entry.build() : []) };
+        const textOut = JSON.stringify(payload, null, 2);
         if(navigator.clipboard){
-          navigator.clipboard.writeText(text).then(() => {
-            showFloat('Copied JSON to clipboard', W/2, H/2, { color:'#facc15', glow:'#f97316', duration:90, rise:0, scale:1.1 });
+          navigator.clipboard.writeText(textOut).then(() => {
+            showMessage(`Copied ${entry.name} to clipboard.`);
           }).catch(() => {
             showMessage('Clipboard blocked by browser.', '#f87171');
           });
         }
       } else if(action === 'like'){
+        const wasLiked = isCommunityLiked(id);
         toggleCommunityLike(id);
-        showCommunityLevels();
+        showMessage(wasLiked ? 'Removed from likes.' : 'Added to likes.');
+        renderList();
       } else if(action === 'remove' && entry.source === 'user'){
         communityUserLevels = communityUserLevels.filter(level => level.id !== id);
         persistUserCommunityLevels();
@@ -3578,12 +3689,14 @@
           delete communityLikes[id];
           persistCommunityLikes();
         }
-        setCommunityFlash(`Removed ${entry.name}.`, '#facc15');
-        showCommunityLevels();
+        showMessage(`Removed ${entry.name}.`);
+        renderList();
       }
     });
 
     document.getElementById('communityBack')?.addEventListener('click', () => startMenu());
+
+    renderList();
   }
 
   function startCommunityLevel(entry){
