@@ -206,6 +206,23 @@
   };
   const QUALITY_OPTIONS = ['Low','Med','High'];
 
+  const POW = { NONE:'none', SKULL:'skull', ROTTEN:'rotten' };
+  const FEAR_STAGES = [
+    { threshold: 0, label: 'Calm', className: 'fear-0' },
+    { threshold: 20, label: 'Uneasy', className: 'fear-1' },
+    { threshold: 40, label: 'Dread', className: 'fear-2' },
+    { threshold: 60, label: 'Panic', className: 'fear-3' },
+    { threshold: 80, label: 'Nightmare', className: 'fear-4' }
+  ];
+  let currentFearStage = -1;
+  const STREAK_MILESTONES = [2,3,5,8,12,18,25];
+  let lastStreakPing = 0;
+  const POW_DATA = {
+    [POW.NONE]:  { short:'—', label:'No Power', color:'#e2e8f0', desc:'Standard eyeball.' },
+    [POW.SKULL]: { short:'Skull', label:'Flaming Skull', color:'#fb7185', desc:'Pierces up to three pegs.' },
+    [POW.ROTTEN]:{ short:'Rotten', label:'Rotten Orb', color:'#bef264', desc:'Shrinks the bucket until caught.' }
+  };
+
   const settings = loadSettings();
   refreshPlayerBadge();
   setFearStage(getFearStage(0));
@@ -605,23 +622,6 @@
     "Flaming Skull pierces three pegs. Rotten orbs shrink the bucket.",
     "Press ESC anytime for settings, blood toggle, or a reset."
   ];
-
-  const POW = { NONE:'none', SKULL:'skull', ROTTEN:'rotten' };
-  const FEAR_STAGES = [
-    { threshold: 0, label: 'Calm', className: 'fear-0' },
-    { threshold: 20, label: 'Uneasy', className: 'fear-1' },
-    { threshold: 40, label: 'Dread', className: 'fear-2' },
-    { threshold: 60, label: 'Panic', className: 'fear-3' },
-    { threshold: 80, label: 'Nightmare', className: 'fear-4' }
-  ];
-  let currentFearStage = -1;
-  const STREAK_MILESTONES = [2,3,5,8,12,18,25];
-  let lastStreakPing = 0;
-  const POW_DATA = {
-    [POW.NONE]:  { short:'—', label:'No Power', color:'#e2e8f0', desc:'Standard eyeball.' },
-    [POW.SKULL]: { short:'Skull', label:'Flaming Skull', color:'#fb7185', desc:'Pierces up to three pegs.' },
-    [POW.ROTTEN]:{ short:'Rotten', label:'Rotten Orb', color:'#bef264', desc:'Shrinks the bucket until caught.' }
-  };
 
   const world = {
     gravity: 0.34,
