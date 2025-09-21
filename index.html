@@ -294,6 +294,7 @@
   }
 
   const SETTINGS_KEY = 'evilPeggle.settings.v1';
+  const CUSTOM_LEVELS_KEY = 'evilPeggle.customLevels.v1';
   const defaultSettings = {
     playerName: 'Wanderer',
     bloodEnabled: true,
@@ -335,6 +336,7 @@
   let freeplayLevel = 1;
 
   const settings = loadSettings();
+  const customLevels = loadCustomLevels();
   if(!settings.stats || typeof settings.stats !== 'object') settings.stats = { bestScores:{} };
   if(!settings.stats.bestScores || typeof settings.stats.bestScores !== 'object') settings.stats.bestScores = {};
   if(typeof settings.storyCleared !== 'boolean') settings.storyCleared = false;
@@ -347,6 +349,7 @@
   if(versionLabel){ versionLabel.textContent = VERSION; }
   refreshPlayerBadge();
   setFearStage(getFearStage(0));
+  let customSessionName = null;
 
   function loadSettings(){
     try{
@@ -363,6 +366,53 @@
   function persistSettings(){
     try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
     catch(err){ console.warn('Failed to store settings', err); }
+  }
+
+  function loadCustomLevels(){
+    try{
+      const raw = localStorage.getItem(CUSTOM_LEVELS_KEY);
+      if(!raw) return {};
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch(err){
+      console.warn('Failed to load custom levels', err);
+    }
+    return {};
+  }
+
+  function persistCustomLevels(){
+    try{ localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels)); }
+    catch(err){ console.warn('Failed to store custom levels', err); }
+  }
+
+  function saveCustomLevel(name, pegs){
+    const trimmed = (name||'').trim().slice(0,48) || `Custom ${Object.keys(customLevels).length+1}`;
+    customLevels[trimmed] = {
+      name: trimmed,
+      updated: Date.now(),
+      pegs: serializePegs(pegs||[])
+    };
+    persistCustomLevels();
+    return trimmed;
+  }
+
+  function deleteCustomLevel(name){
+    if(name in customLevels){
+      delete customLevels[name];
+      persistCustomLevels();
+    }
+  }
+
+  function getCustomLevelEntries(){
+    return Object.values(customLevels).map(entry => ({
+      name: entry?.name || 'Custom',
+      updated: entry?.updated || 0,
+      pegs: entry?.pegs || []
+    })).sort((a,b)=> b.updated - a.updated);
+  }
+
+  function serializeCurrentLevel(){
+    return serializePegs(world.pegs || []);
   }
 
   function escHTML(str){
@@ -1615,6 +1665,29 @@
     return arr;
   }
 
+  function serializePegs(pegs){
+    return pegs.map(p=>({
+      x:Math.round(p.x*100)/100,
+      y:Math.round(p.y*100)/100,
+      r:Math.round((p.r||20)*100)/100,
+      type:p.type||'normal'
+    }));
+  }
+
+  function deserializePegs(data){
+    if(!Array.isArray(data)) return [];
+    const arr=[];
+    for(const entry of data){
+      const x = Number(entry?.x);
+      const y = Number(entry?.y);
+      if(!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      const r = Number(entry?.r);
+      const type = typeof entry?.type === 'string'? entry.type : 'normal';
+      arr.push(peg(x, y, type, Number.isFinite(r)? r : 20));
+    }
+    return arr;
+  }
+
   const LEVELS = [
     tutorialGarden,
     emberOrbit,
@@ -1651,6 +1724,36 @@
     world.levelBaselineScore = 0;
     if(i===1 && settings.showTutorial && !tutorialShown){ scheduleTutorial(); }
     sting(); updateHUD();
+  }
+
+  function loadCustomLayout(pegs){
+    const layout = Array.isArray(pegs)? pegs : [];
+    world.level = 1;
+    world.pegs = deserializePegs(layout);
+    world.totalCursed = world.pegs.filter(p=>p.type==='cursed').length;
+    world.score = 0;
+    world.clearedCursed = 0;
+    world.ball=null;
+    world.aim.ready=true;
+    world.ballsLeft = 10;
+    world.streak=0;
+    lastStreakPing=0;
+    world.fear = 0;
+    world.ballType=POW.NONE;
+    world.pierce=0;
+    world.chainCharges=0;
+    world.gravenReady=false;
+    world.gravity = world.baseGravity;
+    world.hallucinations=[];
+    wipeScene();
+    world.levelBaselineScore = 0;
+    if(world.pegs.length===0){
+      const fallback = makeGrid(3,7,220,10,5);
+      world.pegs.push(...fallback);
+      world.totalCursed = world.pegs.filter(p=>p.type==='cursed').length;
+    }
+    sting();
+    updateHUD();
   }
 
   function scheduleTutorial(){
@@ -2296,7 +2399,142 @@
     document.getElementById('creditsBack')?.addEventListener('click', () => startMenu());
   }
 
+  function showLevelLab(){
+    stopGame();
+    state = STATE.MENU;
+
+    const render = () => {
+      const entries = getCustomLevelEntries();
+      const list = entries.length
+        ? entries.map(entry => {
+            const time = entry.updated ? new Date(entry.updated).toLocaleString() : '—';
+            return `<div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px" data-name="${escHTML(entry.name)}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div>
+                  <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px">${escHTML(entry.name)}</span>
+                  <div style="font-size:11px;color:rgba(226,232,240,.7)">${time}</div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn" data-action="play">▶ Play</button>
+                  <button class="btn" data-action="copy">⧉ Copy</button>
+                  <button class="btn danger" data-action="delete">✖ Delete</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<div class="warn">No custom levels saved yet. Paste JSON below or export the current board.</div>';
+
+      setOverlay(`
+        <div class="menu story level-lab" style="max-width:640px;width:100%;display:flex;flex-direction:column;gap:18px">
+          <div class="title">Level Lab (Beta)</div>
+          <p>Import, save, and launch custom layouts. Share the JSON blob with friends to trade horrors.</p>
+          <section class="settings-section" style="gap:12px">
+            <h3>Saved Levels</h3>
+            <div id="labList" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow:auto">${list}</div>
+          </section>
+          <section class="settings-section" style="gap:12px">
+            <h3>Editor</h3>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fda4af">
+              Level Name
+              <input type="text" id="labName" value="${escHTML(customSessionName || 'Custom Draft')}" maxlength="48" style="padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(20,20,26,.92);color:#f8fafc;font-weight:600">
+            </label>
+            <textarea id="labData" spellcheck="false" style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
+            <div class="settings-actions minor" style="gap:8px">
+              <button class="btn" id="labExport">⧉ Export Current</button>
+              <button class="btn good" id="labSave">💾 Save</button>
+              <button class="btn" id="labPlayTemp">▶ Play Once</button>
+            </div>
+            <div class="warn" id="labMessage"></div>
+          </section>
+          <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
+        </div>`);
+
+      attach(entries);
+    };
+
+    const parseLevelPayload = (text) => {
+      if(!text) return [];
+      try{
+        const json = JSON.parse(text);
+        if(Array.isArray(json)) return json;
+        if(json && Array.isArray(json.pegs)) return json.pegs;
+      } catch(err){
+        console.warn('Failed to parse level payload', err);
+      }
+      return [];
+    };
+
+    const attach = (entries) => {
+      const nameInput = document.getElementById('labName');
+      const dataInput = document.getElementById('labData');
+      const messageEl = document.getElementById('labMessage');
+
+      const showMsg = (msg, color='#facc15') => {
+        if(messageEl){
+          messageEl.textContent = msg;
+          messageEl.style.color = color;
+        }
+      };
+
+      document.getElementById('labExport')?.addEventListener('click', ()=>{
+        const payload = { version: VERSION, pegs: serializeCurrentLevel() };
+        dataInput.value = JSON.stringify(payload, null, 2);
+        showMsg('Current level exported to JSON.');
+      });
+
+      document.getElementById('labSave')?.addEventListener('click', ()=>{
+        const payload = parseLevelPayload(dataInput.value.trim());
+        if(!payload.length){ showMsg('Paste or export a level first.', '#f87171'); return; }
+        const key = saveCustomLevel(nameInput.value, payload);
+        showMsg(`Saved custom level: ${key}`);
+        render();
+      });
+
+      document.getElementById('labPlayTemp')?.addEventListener('click', ()=>{
+        const payload = parseLevelPayload(dataInput.value.trim());
+        if(!payload.length){ showMsg('Need valid level data to play.', '#f87171'); return; }
+        customSessionName = nameInput.value.trim() || 'Custom Draft';
+        setOverlay('');
+        loadCustomLayout(payload);
+        gameMode = MODE.FREEPLAY;
+        world.score = 0;
+        state = STATE.PLAY;
+        world.aim.ready = true;
+        syncHUDVisibility();
+      });
+
+      document.getElementById('labBack')?.addEventListener('click', ()=> startMenu());
+
+      const listEl = document.getElementById('labList');
+      listEl?.querySelectorAll('.setting-tile').forEach(tile => {
+        const name = tile.dataset.name;
+        tile.addEventListener('click', e => {
+          const action = e.target?.dataset?.action;
+          if(!action) return;
+          e.stopPropagation();
+          if(action==='play'){
+            startCustomLevel(name);
+          } else if(action==='delete'){
+            deleteCustomLevel(name);
+            render();
+          } else if(action==='copy'){
+            const entry = customLevels[name];
+            if(!entry) return;
+            const text = JSON.stringify({ version: VERSION, pegs: entry.pegs }, null, 2);
+            dataInput.value = text;
+            nameInput.value = entry.name;
+            if(navigator.clipboard){ navigator.clipboard.writeText(text).catch(()=>{}); }
+            showMsg(`Copied ${name} to editor.`);
+          }
+        });
+      });
+    };
+
+    render();
+  }
+
   function startMenu(){
+    customSessionName = null;
     if(state===STATE.PLAY && gameMode===MODE.STORY){
       settings.storyProgress = Math.max(1, Math.min(TOTAL_LEVELS, world.level));
       persistSettings();
@@ -2366,6 +2604,7 @@
 
   function startFreeplay(level){
     freeplayLevel = level;
+    customSessionName = null;
     gameMode = MODE.FREEPLAY;
     tutorialShown = true;
     world.score = 0;
@@ -2377,15 +2616,42 @@
     syncHUDVisibility();
   }
 
+  function startCustomLevel(name){
+    const entry = customLevels[name];
+    if(!entry){
+      showFloat('Missing custom level', W/2, H/2, { color:'#f87171', glow:'#7f1d1d', duration:90, rise:0 });
+      return;
+    }
+    const pegs = deserializePegs(entry.pegs || []);
+    customSessionName = entry.name || name;
+    freeplayLevel = 0;
+    gameMode = MODE.FREEPLAY;
+    tutorialShown = true;
+    world.score = 0;
+    state = STATE.PLAY;
+    setOverlay('');
+    loadCustomLayout(pegs);
+    updateHUD();
+    world.aim.ready = true;
+    syncHUDVisibility();
+  }
+
   function showFreeplayResult(levelScore){
     stopGame();
     state = STATE.MENU;
     world.aim.ready = false;
-    const best = formatScore(getBestScore(freeplayLevel));
-    setOverlay(`<div class="menu"><div class="title">Level ${freeplayLevel} Cleared</div><div class="subtitle">Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayReplay">↺ Encore</button><button class="btn" id="freeplaySelect">🎯 Levels</button><button class="btn" id="freeplayMenu">☰ Menu</button></div></div>`);
-    document.getElementById('freeplayReplay').onclick = () => startFreeplay(freeplayLevel);
-    document.getElementById('freeplaySelect').onclick = () => showFreeplayMenu();
-    document.getElementById('freeplayMenu').onclick = () => startMenu();
+    if(customSessionName){
+      setOverlay(`<div class="menu"><div class="title">${escHTML(customSessionName)} Cleared</div><div class="subtitle">Score ${formatScore(levelScore)}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayReplay">↺ Encore</button><button class="btn" id="freeplaySelect">🧪 Level Lab</button><button class="btn" id="freeplayMenu">☰ Menu</button></div></div>`);
+      document.getElementById('freeplayReplay').onclick = () => startCustomLevel(customSessionName);
+      document.getElementById('freeplaySelect').onclick = () => showLevelLab();
+      document.getElementById('freeplayMenu').onclick = () => startMenu();
+    } else {
+      const best = formatScore(getBestScore(freeplayLevel));
+      setOverlay(`<div class="menu"><div class="title">Level ${freeplayLevel} Cleared</div><div class="subtitle">Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayReplay">↺ Encore</button><button class="btn" id="freeplaySelect">🎯 Levels</button><button class="btn" id="freeplayMenu">☰ Menu</button></div></div>`);
+      document.getElementById('freeplayReplay').onclick = () => startFreeplay(freeplayLevel);
+      document.getElementById('freeplaySelect').onclick = () => showFreeplayMenu();
+      document.getElementById('freeplayMenu').onclick = () => startMenu();
+    }
   }
   function showGameOver(){
     stopGame();
@@ -2415,11 +2681,18 @@
     state = STATE.MENU;
     world.aim.ready=false;
     const levelScore = Math.max(0, Math.floor(world.score));
-    const best = formatScore(getBestScore(freeplayLevel));
-    setOverlay(`<div class="menu"><div class="title">Encore Failed</div><div class="subtitle">Level ${freeplayLevel} · Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayEncore">↺ Encore</button><button class="btn" id="freeplayLevels">🎯 Levels</button><button class="btn" id="freeplayMenuLoss">☰ Menu</button></div></div>`);
-    document.getElementById('freeplayEncore').onclick = () => startFreeplay(freeplayLevel);
-    document.getElementById('freeplayLevels').onclick = () => showFreeplayMenu();
-    document.getElementById('freeplayMenuLoss').onclick = () => startMenu();
+    if(customSessionName){
+      setOverlay(`<div class="menu"><div class="title">Encore Failed</div><div class="subtitle">${escHTML(customSessionName)} · Score ${formatScore(levelScore)}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayEncore">↺ Encore</button><button class="btn" id="freeplayLevels">🧪 Level Lab</button><button class="btn" id="freeplayMenuLoss">☰ Menu</button></div></div>`);
+      document.getElementById('freeplayEncore').onclick = () => startCustomLevel(customSessionName);
+      document.getElementById('freeplayLevels').onclick = () => showLevelLab();
+      document.getElementById('freeplayMenuLoss').onclick = () => startMenu();
+    } else {
+      const best = formatScore(getBestScore(freeplayLevel));
+      setOverlay(`<div class="menu"><div class="title">Encore Failed</div><div class="subtitle">Level ${freeplayLevel} · Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayEncore">↺ Encore</button><button class="btn" id="freeplayLevels">🎯 Levels</button><button class="btn" id="freeplayMenuLoss">☰ Menu</button></div></div>`);
+      document.getElementById('freeplayEncore').onclick = () => startFreeplay(freeplayLevel);
+      document.getElementById('freeplayLevels').onclick = () => showFreeplayMenu();
+      document.getElementById('freeplayMenuLoss').onclick = () => startMenu();
+    }
   }
 
   // ===== Draw helpers =====

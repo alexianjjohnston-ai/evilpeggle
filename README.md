@@ -27,6 +27,11 @@ A single-file horror tribute to Peggle. Fire an eldritch eyeball through cursed 
 
 Fear rises as you sustain streaks; higher tiers distort the CRT, spawn hallucinations, and eventually trigger jumpscares.
 
+### Level Lab (Beta)
+- Import/export JSON layouts with a built-in editor.
+- Save custom levels locally and launch them straight into Freeplay.
+- Share the exported JSON blob with friends to swap nightmares.
+
 ---
 
 ## 🛠️ Setup
