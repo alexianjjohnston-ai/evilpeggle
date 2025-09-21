@@ -74,6 +74,7 @@
     .score-card{border:1px solid rgba(248,113,113,.28);background:rgba(16,16,20,.78);color:#fef2ff;font:600 16px/1.2 "Inter", sans-serif;padding:16px;border-radius:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer;transition:transform .15s ease, background .15s ease;appearance:none;text-align:left}
     .score-card span{font-size:12px;color:rgba(248,189,189,.85);font-weight:500;text-transform:uppercase;letter-spacing:.14em}
     .score-card:hover{transform:translateY(-2px);background:rgba(20,20,26,.86)}
+    .admin-tools{display:flex;flex-direction:column;gap:10px}
     .menu.hint{gap:14px;padding:26px 28px;max-width:420px}
     .menu.hint p{margin:0;font-size:14px;color:#fef2f2}
 
@@ -246,6 +247,7 @@
   if(!settings.stats || typeof settings.stats !== 'object') settings.stats = { bestScores:{} };
   if(!settings.stats.bestScores || typeof settings.stats.bestScores !== 'object') settings.stats.bestScores = {};
   if(typeof settings.storyCleared !== 'boolean') settings.storyCleared = false;
+  if(typeof settings.adminUnlocked !== 'boolean') settings.adminUnlocked = false;
   refreshPlayerBadge();
   setFearStage(getFearStage(0));
 
@@ -277,6 +279,13 @@
     playerBadge.textContent = `Player: ${name} • Left click to fire • ESC for settings`;
   }
 
+  function stopGame(){
+    world.ball = null;
+    world.aim.ready = false;
+    world.bucket.open = true;
+    world.bucket.anim = 0;
+  }
+
   function getBestScore(level){
     return settings.stats.bestScores[String(level)] ?? null;
   }
@@ -299,6 +308,22 @@
   function buildSettingsMarkup(){
     const nameVal = escHTML(settings.playerName || '');
     const qualityOpts = QUALITY_OPTIONS.map(opt => `<option ${opt===settings.quality? 'selected':''}>${opt}</option>`).join('');
+    const adminSection = settings.adminUnlocked ? `
+      <div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:10px">
+        <label><span>Admin Tools</span><small>Testing utilities — keep secret.</small></label>
+        <div class="admin-tools">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="adminAddScore">+1k Score</button>
+            <button class="btn" id="adminUnlockStory">Unlock Freeplay</button>
+            <button class="btn" id="adminClearScores">Clear Best Scores</button>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:rgba(248,189,189,.85)">Warp Level</label>
+            <input type="number" id="adminLevelInput" min="1" max="${TOTAL_LEVELS}" value="${Math.min(TOTAL_LEVELS, Math.max(1, world.level))}" style="width:70px" />
+            <button class="btn" id="adminWarp">Go</button>
+          </div>
+        </div>
+      </div>` : '';
     return `
       <div class="settings-panel">
         <h2>Ritual Settings</h2>
@@ -355,6 +380,7 @@
         </div>
         <button class="btn" id="modalGuideBtn" style="align-self:center">ℹ How to Play</button>
         <button class="btn" id="modalForgetBtn" style="align-self:center">🗙 Forget Profile</button>
+        ${adminSection}
       </div>`;
   }
 
@@ -372,6 +398,11 @@
     const resumeButton = modal.querySelector('#modalResumeBtn');
     const storyButton = modal.querySelector('#modalGuideBtn');
     const forgetButton = modal.querySelector('#modalForgetBtn');
+    const adminAdd = modal.querySelector('#adminAddScore');
+    const adminUnlock = modal.querySelector('#adminUnlockStory');
+    const adminClear = modal.querySelector('#adminClearScores');
+    const adminWarp = modal.querySelector('#adminWarp');
+    const adminLevelInput = modal.querySelector('#adminLevelInput');
 
     const sanitizeName = val => val.replace(/[^a-z0-9 _!\-]/gi, '').slice(0, 16);
 
@@ -449,6 +480,40 @@
         persistSettings();
         refreshPlayerBadge();
         renderSettingsModal();
+      });
+    }
+    if(adminAdd){
+      adminAdd.addEventListener('click', () => {
+        world.score += 1000;
+        updateHUD();
+      });
+    }
+    if(adminUnlock){
+      adminUnlock.addEventListener('click', () => {
+        settings.storyCleared = true;
+        persistSettings();
+        closeSettings();
+        startMenu();
+      });
+    }
+    if(adminClear){
+      adminClear.addEventListener('click', () => {
+        settings.stats.bestScores = {};
+        persistSettings();
+        renderSettingsModal();
+      });
+    }
+    if(adminWarp){
+      adminWarp.addEventListener('click', () => {
+        const target = parseInt(adminLevelInput?.value||'1', 10);
+        if(Number.isFinite(target) && target>=1 && target<=TOTAL_LEVELS){
+          closeSettings();
+          if(state !== STATE.PLAY){ startGame(); }
+          world.score = 0;
+          loadLevel(target);
+          updateHUD();
+          world.aim.ready = true;
+        }
       });
     }
   }
@@ -679,7 +744,7 @@
 
   function renderScoreList(){
     let html = '<div class="score-list">';
-    for(let i=1;i<=LEVELS.length;i++){
+    for(let i=1;i<=TOTAL_LEVELS;i++){
       html += `<div class="score-item"><span>Level ${i}</span><span>${formatScore(getBestScore(i))}</span></div>`;
     }
     html += '</div>';
@@ -1101,6 +1166,12 @@
       if(settingsOpen) closeSettings();
       else if(state===STATE.PLAY) openSettings();
     }
+    if(e.code==='KeyA' && e.ctrlKey && e.shiftKey){
+      settings.adminUnlocked = !settings.adminUnlocked;
+      persistSettings();
+      const note = settings.adminUnlocked? 'Admin tools unlocked' : 'Admin tools disabled';
+      showFloat(note, W/2, H/2, { color:'#facc15', glow:'#fbbf24', duration:90, rise:0, scale:1.2 });
+    }
   });
 
   function fire(){ if(!world.aim.ready || world.ballsLeft<=0) return; const a = world.aim.ang; const p = world.aim.power; world.ball = new Ball(W/2, 60, Math.cos(a)*p, Math.sin(a)*p); world.ballsLeft--; world.aim.ready=false; tone(520,0.06,'square',0.045); updateHUD(); }
@@ -1119,6 +1190,7 @@
   function enterAttract(){ startMenu(); }
 
   function showStoryIntro({ markSeen=false, onComplete }={}){
+    stopGame();
     state = STATE.MENU;
     const name = escHTML(settings.playerName || 'Wanderer');
     const slides = [
@@ -1150,9 +1222,9 @@
   }
 
   function startMenu(){
+    stopGame();
     state=STATE.MENU;
     gameMode = MODE.STORY;
-    world.aim.ready=false;
     const hint = MENU_HINTS[Math.floor(Math.random()*MENU_HINTS.length)];
     const scoreHtml = renderScoreList();
     const freeplayLocked = !settings.storyCleared;
@@ -1168,6 +1240,7 @@
     if(loreBtn) loreBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu });
   }
   function startGame(){
+    stopGame();
     gameMode = MODE.STORY;
     state=STATE.PLAY;
     setOverlay('');
@@ -1212,6 +1285,7 @@
   }
 
   function showFreeplayResult(levelScore){
+    stopGame();
     state = STATE.MENU;
     world.aim.ready = false;
     const best = formatScore(getBestScore(freeplayLevel));
@@ -1220,11 +1294,17 @@
     document.getElementById('freeplaySelect').onclick = () => showFreeplayMenu();
     document.getElementById('freeplayMenu').onclick = () => startMenu();
   }
-  function showGameOver(){ const final = Math.floor(world.score); setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`); document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); }; document.getElementById('menuBtn').onclick=()=> startMenu(); }
+  function showGameOver(){
+    stopGame();
+    const final = Math.floor(world.score);
+    setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`);
+    document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); };
+    document.getElementById('menuBtn').onclick=()=> startMenu();
+  }
 
   function showStoryComplete(finalScore){
+    stopGame();
     state = STATE.MENU;
-    world.aim.ready=false;
     settings.storyCleared = true;
     persistSettings();
     const formatted = formatScore(finalScore);
@@ -1235,6 +1315,7 @@
   }
 
   function showFreeplayLoss(){
+    stopGame();
     state = STATE.MENU;
     world.aim.ready=false;
     const levelScore = Math.max(0, Math.floor(world.score - (world.levelBaselineScore||0)));
@@ -1365,7 +1446,11 @@
         showFreeplayResult(levelScore);
       } else {
         world.level++;
-        loadLevel(world.level);
+        if(world.level > TOTAL_LEVELS){
+          showStoryComplete(Math.floor(world.score));
+        } else {
+          loadLevel(world.level);
+        }
       }
     } else if(world.ball?.dead){
       world.ball=null;
