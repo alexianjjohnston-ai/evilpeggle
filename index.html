@@ -30,7 +30,7 @@
 
     canvas{display:block;width:100%;height:auto;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
-    .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:20px 26px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12)}
+    .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:20px 26px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12);opacity:1;transition:opacity .2s ease}
     .hud-top,.hud-bottom{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
     .hud-bottom{align-items:flex-end}
     .hud-cluster{display:flex;gap:.6rem;flex-wrap:wrap}
@@ -65,7 +65,7 @@
     .subtitle{opacity:.92;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:#fca5a5}
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
     .flash{animation:flash 1.6s infinite}
-    .score-list{display:grid;gap:.45rem;margin-top:12px;width:100%;max-width:360px}
+    .score-list{display:grid;gap:.45rem;margin-top:12px;width:100%;max-width:360px;max-height:200px;overflow:auto;padding-right:4px}
     .score-item{display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;border-radius:12px;background:rgba(14,14,16,.7);border:1px solid rgba(248,113,113,.2);color:#fef2ff;font-size:13px;text-transform:uppercase;letter-spacing:.12em}
     .score-item span:last-child{font-weight:700;letter-spacing:.1em;color:#ffe4f8}
     .score-list-title{margin-top:16px;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(248,189,189,.72)}
@@ -77,6 +77,9 @@
     .admin-tools{display:flex;flex-direction:column;gap:10px}
     .menu.hint{gap:14px;padding:26px 28px;max-width:420px}
     .menu.hint p{margin:0;font-size:14px;color:#fef2f2}
+    .menu.name{gap:18px;padding:28px 30px;max-width:380px}
+    .menu.name input{width:100%;padding:.65rem .85rem;border-radius:12px;border:1px solid rgba(248,113,113,.35);background:rgba(18,18,22,.9);color:#fef2ff;font-size:16px;font-weight:600;letter-spacing:.08em;box-shadow:inset 0 0 14px rgba(0,0,0,.4)}
+    .menu.name small{font-size:12px;color:rgba(248,189,189,.78);letter-spacing:.18em;text-transform:uppercase}
 
     .settings-layer{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(12,12,16,.85);backdrop-filter:blur(20px);z-index:60}
     .settings-layer[hidden]{display:none}
@@ -196,6 +199,7 @@
   const fearWidget  = document.getElementById('fearWidget');
   const fearStageLabel = document.getElementById('fearStageLabel');
   const powerLabel  = document.getElementById('powerLabel');
+  const hudLayer = document.getElementById('hudLayer');
   const progressFill= document.getElementById('progressFill');
   const settingsModal = document.getElementById('settingsModal');
   const playerBadge = document.getElementById('playerBadge');
@@ -212,6 +216,8 @@
     showTutorial: true,
     storySeen: false,
     storyCleared: false,
+    storyProgress: 1,
+    storyScore: 0,
     quality: 'Med',
     stats: { bestScores: {} }
   };
@@ -244,6 +250,7 @@
   if(typeof settings.storyCleared !== 'boolean') settings.storyCleared = false;
   if(typeof settings.adminUnlocked !== 'boolean') settings.adminUnlocked = false;
   if(typeof settings.storyProgress !== 'number' || !Number.isFinite(settings.storyProgress)) settings.storyProgress = 1;
+  if(typeof settings.storyScore !== 'number' || !Number.isFinite(settings.storyScore)) settings.storyScore = 0;
   refreshPlayerBadge();
   setFearStage(getFearStage(0));
 
@@ -280,6 +287,7 @@
     world.aim.ready = false;
     world.bucket.open = true;
     world.bucket.anim = 0;
+    syncHUDVisibility();
   }
 
   function getBestScore(level){
@@ -436,8 +444,9 @@
       });
     }
     if(qualityModal){
+      qualitySel = qualityModal;
       qualityModal.value = settings.quality;
-      qualityModal.addEventListener('change', e => {
+      qualityModal.addEventListener('change', () => {
         qualitySel = qualityModal;
         applyQuality();
       });
@@ -528,6 +537,7 @@
     }
     settingsModal.hidden = false;
     renderSettingsModal();
+    syncHUDVisibility();
   }
 
   function closeSettings(){
@@ -537,6 +547,7 @@
     settingsOpen = false;
     const previous = stateBeforePause;
     state = previous;
+    syncHUDVisibility();
   }
 
   function doResetLevel(){
@@ -713,6 +724,8 @@
   let tutorialShown = false;
   let jumpscareCooldown = 0;
   let jumpscareActive = false;
+  function syncHUDVisibility(){ if(!hudLayer) return; hudLayer.style.opacity = state===STATE.PLAY?1:0; }
+  syncHUDVisibility();
   const bootMsgs = [
     "Sound-checking the void…",
     "Tuning haunted strings…",
@@ -1176,10 +1189,40 @@
   function setOverlay(html){
     ui.innerHTML = html||'';
     ui.style.pointerEvents = html ? 'auto' : 'none';
+    syncHUDVisibility();
   }
   function showBoot(){ setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="progress-bar" style="width:320px"><i id="bootFill" style="transform:scaleX(0)"></i></div><div class="warn">Content warning: flashing lights, jumpscares, and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE</div></div>`); }
   function tickBoot(){ bootProg = Math.min(100, bootProg + 1.5 + Math.random()*1.5); const fill=document.getElementById('bootFill'); const msg=document.getElementById('bootMsg'); if(fill) fill.style.transform = `scaleX(${bootProg/100})`; if(msg && bootProg>bootMsgIdx*20){ bootMsgIdx=(bootMsgIdx+1)%bootMsgs.length; msg.textContent = bootMsgs[bootMsgIdx]; } if(bootProg>=100){ enterAttract(); } }
-  function enterAttract(){ startMenu(); }
+  function enterAttract(){ ensurePlayerName(()=> startMenu()); }
+
+  function ensurePlayerName(done){
+    const current = (settings.playerName||'').trim();
+    if(current && current !== 'Wanderer'){
+      if(typeof done === 'function') done();
+      return;
+    }
+    stopGame();
+    state = STATE.MENU;
+    const defaultVal = current && current !== 'Wanderer'? current : '';
+    setOverlay(`<div class="menu name"><div class="title">State Your Name</div><p>Whisper the alias the carnival will chant.</p><input id="playerNameInputPrimary" maxlength="16" value="${escHTML(defaultVal)}" autocomplete="off" placeholder="Wanderer" /><small>Only letters, numbers, spaces, - _ !</small><div class="row" style="gap:10px"><button class="btn good" id="nameConfirm">✔ Enter</button><button class="btn" id="nameSkip">Skip</button></div></div>`);
+    const input = document.getElementById('playerNameInputPrimary');
+    const sanitize = (val)=> val.replace(/[^a-z0-9 _!\-]/gi,'').slice(0,16);
+    if(input){
+      input.focus();
+      input.addEventListener('input', (e)=>{ e.target.value = sanitize(e.target.value); });
+      input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ document.getElementById('nameConfirm')?.click(); }});
+    }
+    const commit = (raw)=>{
+      const value = sanitize(raw).trim();
+      settings.playerName = value || 'Wanderer';
+      persistSettings();
+      refreshPlayerBadge();
+      setOverlay('');
+      if(typeof done === 'function') done();
+    };
+    document.getElementById('nameConfirm')?.addEventListener('click', ()=> commit(input?.value||''));
+    document.getElementById('nameSkip')?.addEventListener('click', ()=> commit('Wanderer'));
+  }
 
   function showStoryIntro({ markSeen=false, onComplete }={}){
     stopGame();
@@ -1214,16 +1257,21 @@
   }
 
   function startMenu(){
+    if(state===STATE.PLAY && gameMode===MODE.STORY){
+      settings.storyScore = Math.floor(world.score);
+      settings.storyProgress = Math.max(1, Math.min(TOTAL_LEVELS, world.level));
+      persistSettings();
+    }
     stopGame();
     state=STATE.MENU;
     gameMode = MODE.STORY;
     const hint = MENU_HINTS[Math.floor(Math.random()*MENU_HINTS.length)];
     const scoreHtml = renderScoreList();
-    const freeplayLocked = !settings.storyCleared;
+    const freeplayLocked = settings.storyProgress <= 1;
     const freeplayButton = freeplayLocked
       ? '<button class="btn" id="freeplayBtn" disabled title="Finish Story Run to unlock">🔒 Freeplay</button>'
       : '<button class="btn" id="freeplayBtn">🎯 Freeplay</button>';
-    const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Finish Story Run to unlock Freeplay.</div>' : '';
+    const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Beat level 1 in Story Run to unlock Freeplay.</div>' : '';
     const resumeLabel = settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS? `Continue (Level ${settings.storyProgress})` : '▶ Story Run';
     setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="loreBtn">ℹ How to Play</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
     document.getElementById('playBtn').onclick=()=> startGame();
@@ -1233,42 +1281,43 @@
     if(loreBtn) loreBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu });
   }
   function startGame(){
+    stopGame();
     gameMode = MODE.STORY;
-    if(settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS){
-      world.score = Math.max(world.score,0);
-      state=STATE.PLAY;
-      setOverlay('');
-      tutorialShown = false;
+    const canResume = settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS;
+    state=STATE.PLAY;
+    setOverlay('');
+    tutorialShown = false;
+    if(canResume){
+      world.score = settings.storyScore || 0;
       loadLevel(settings.storyProgress);
-      updateHUD();
-      world.aim.ready=true;
     } else {
-      stopGame();
-      state=STATE.PLAY;
-      setOverlay('');
-      tutorialShown = false;
-      world.score=0;
+      world.score = 0;
       settings.storyProgress = 1;
+      settings.storyScore = 0;
+      persistSettings();
       loadLevel(1);
-      updateHUD();
-      world.aim.ready=true;
     }
+    updateHUD();
+    world.aim.ready=true;
+    syncHUDVisibility();
   }
 
   function showFreeplayMenu(){
-    if(!settings.storyCleared){
-      setOverlay(`<div class="menu"><div class="title">Freeplay Locked</div><div class="subtitle">Finish Story Run to unlock</div><button class="btn" id="lockedBack">← Back</button></div>`);
-      const back=document.getElementById('lockedBack');
-      if(back) back.onclick = () => startMenu();
-      return;
-    }
+    stopGame();
     state=STATE.MENU;
     world.aim.ready=false;
-    const cards = LEVELS.map((_,i)=>{
+    const unlockedCount = settings.storyCleared ? TOTAL_LEVELS : Math.max(0, Math.min(TOTAL_LEVELS, settings.storyProgress - 1));
+    if(unlockedCount<=0){
+      setOverlay(`<div class="menu"><div class="title">Freeplay Locked</div><div class="subtitle">Beat a level in Story Run first</div><button class="btn" id="lockedBack">← Back</button></div>`);
+      document.getElementById('lockedBack')?.addEventListener('click', ()=> startMenu());
+      return;
+    }
+    const cards = Array.from({length: unlockedCount}, (_,i)=>{
       const level=i+1;
       return `<button type="button" class="score-card" data-level="${level}">Level ${level}<span>Best ${formatScore(getBestScore(level))}</span></button>`;
     }).join('');
-    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-grid">${cards}</div><div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
+    const totalNote = unlockedCount < TOTAL_LEVELS && !settings.storyCleared ? `<div class="warn" style="font-size:11px">Clear more Story levels to unlock additional Freeplay hunts.</div>` : '';
+    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-grid">${cards}</div>${totalNote}<div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
     document.querySelectorAll('.score-card').forEach(btn=>{
       btn.onclick = ()=> startFreeplay(Number(btn.dataset.level));
     });
@@ -1286,6 +1335,7 @@
     loadLevel(level);
     updateHUD();
     world.aim.ready = true;
+    syncHUDVisibility();
   }
 
   function showFreeplayResult(levelScore){
@@ -1301,8 +1351,11 @@
   function showGameOver(){
     stopGame();
     const final = Math.floor(world.score);
+    settings.storyProgress = 1;
+    settings.storyScore = 0;
+    persistSettings();
     setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`);
-    document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); };
+    document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; settings.storyProgress=1; settings.storyScore=0; persistSettings(); loadLevel(1); updateHUD(); world.aim.ready=true; syncHUDVisibility(); };
     document.getElementById('menuBtn').onclick=()=> startMenu();
   }
 
@@ -1311,6 +1364,7 @@
     state = STATE.MENU;
     settings.storyCleared = true;
     settings.storyProgress = 1;
+    settings.storyScore = 0;
     persistSettings();
     const formatted = formatScore(finalScore);
     setOverlay(`<div class="menu"><div class="title">Encore Complete</div><div class="subtitle">Total score <b>${formatted}</b></div><div class="warn">Freeplay unlocked! Revisit any haunt for better scores.</div><div class="row" style="gap:10px"><button class="btn good" id="storyReplay">▶ Replay Story</button><button class="btn" id="storyFreeplay">🎯 Freeplay</button><button class="btn" id="storyMenu">☰ Menu</button></div></div>`);
@@ -1446,13 +1500,16 @@
       const levelScore = Math.max(0, Math.floor(world.score - (world.levelBaselineScore||0)));
       recordBest(world.level, levelScore);
       updateHUD();
+      if(gameMode === MODE.STORY){
+        settings.storyScore = Math.floor(world.score);
+        settings.storyProgress = world.level;
+        persistSettings();
+      }
       if(gameMode === MODE.FREEPLAY){
         world.ball = null;
         showFreeplayResult(levelScore);
       } else {
         world.level++;
-        settings.storyProgress = world.level;
-        persistSettings();
         if(world.level > TOTAL_LEVELS){
           showStoryComplete(Math.floor(world.score));
         } else {
