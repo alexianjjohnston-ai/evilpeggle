@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Evil Peggle — Blood Encore</title>
+  <title>Evil Peggle</title>
   <style>
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0b0b0e 0%, #050507 100%);color:#f3f4f6;font:14px/1.45 "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial}
@@ -101,13 +101,12 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Evil Peggle — Blood Encore</h1>
+      <h1>Evil Peggle</h1>
       <div class="sp"></div>
       <div class="row">
         <label>Quality <select id="quality"><option>Low</option><option selected>Med</option><option>High</option></select></label>
         <button id="muteBtn" class="btn" title="Toggle audio">🔊 Audio</button>
         <button id="settingsBtn" class="btn good" title="Open ritual settings">⚙ Settings</button>
-        <button id="helpBtn" class="btn" title="Read the cursed manual">📜 Lore</button>
       </div>
     </header>
     <main>
@@ -161,7 +160,7 @@
       </div>
     </main>
     <footer>
-      <span class="footer-note">Blood encore v0.9 • Wear headphones</span>
+      <span class="footer-note">Version 1 • Wear headphones</span>
       <span id="playerBadge">Watcher: Wanderer • Left click to fire • ESC for settings</span>
     </footer>
   </div>
@@ -175,6 +174,7 @@
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const ui = document.getElementById('uiOverlay');
+  ui.style.pointerEvents = 'none';
 
   // ===== HUD refs =====
   const ballsLabel = document.getElementById('ballsLabel');
@@ -235,7 +235,7 @@
   function refreshPlayerBadge(){
     if(!playerBadge) return;
     const name = (settings.playerName || '').trim() || 'Wanderer';
-    playerBadge.textContent = `Watcher: ${name} • Left click to fire • ESC for settings`;
+    playerBadge.textContent = `Player: ${name} • Left click to fire • ESC for settings`;
   }
 
   function buildSettingsMarkup(){
@@ -294,7 +294,7 @@
           <button class="btn" id="modalCloseBtn">✖ Close</button>
           <button class="btn good" id="modalResumeBtn">✔ Resume</button>
         </div>
-        <button class="btn" id="modalStoryBtn" style="align-self:center">📖 Replay Intro</button>
+        <button class="btn" id="modalGuideBtn" style="align-self:center">ℹ How to Play</button>
         <button class="btn" id="modalForgetBtn" style="align-self:center">🗙 Forget Profile</button>
       </div>`;
   }
@@ -310,7 +310,7 @@
     const resetButton = modal.querySelector('#modalResetBtn');
     const closeButton = modal.querySelector('#modalCloseBtn');
     const resumeButton = modal.querySelector('#modalResumeBtn');
-    const storyButton = modal.querySelector('#modalStoryBtn');
+    const storyButton = modal.querySelector('#modalGuideBtn');
     const forgetButton = modal.querySelector('#modalForgetBtn');
 
     const sanitizeName = val => val.replace(/[^a-z0-9 _!\-]/gi, '').slice(0, 16);
@@ -438,17 +438,7 @@
   const muteBtn = document.getElementById('muteBtn');
   const resetBtn = document.getElementById('resetBtn');
   const settingsBtn = document.getElementById('settingsBtn');
-  const helpBtn = document.getElementById('helpBtn');
   const qualitySel = document.getElementById('quality');
-
-  helpBtn.onclick = () => alert(`Tour Notes — Evil Peggle
-• Aim with the mouse, left click to launch your haunted orb.
-• Clear every cursed peg to unlock the next verse.
-• Catch the bucket beast to recover an eyeball.
-• Steel pegs just echo rebounds — lean on powers to crack them.
-• Flaming Skull pierces. Rotten Orb shrinks your safety bucket until caught.
-• Streaks drive the Fear bar... and the crowd starts screaming.
-• Press ESC or ⚙ Settings to tune blood, audio, and stage tricks.`);
   if(settingsBtn){ settingsBtn.onclick = () => openSettings(); }
 
   // ===== Quality toggle =====
@@ -607,6 +597,13 @@
     "Feeding amps with blood…",
     "Rehearsing the screams…",
     "Dropping the crimson curtain…"
+  ];
+  const MENU_HINTS = [
+    "Catch the bucket beast to earn another shot.",
+    "Steel pegs just bounce — bring powers to break the rhythm.",
+    "Fear climbs faster with streaks. High fear changes everything.",
+    "Flaming Skull pierces three pegs. Rotten orbs shrink the bucket.",
+    "Press ESC anytime for settings, blood toggle, or a reset."
   ];
 
   const POW = { NONE:'none', SKULL:'skull', ROTTEN:'rotten' };
@@ -841,7 +838,10 @@
   function drawBucket(){ const b=world.bucket; const spr = b.open? Spr.bucketOpen : Spr.bucketClosed; ctx.drawImage(spr, b.x, b.y, b.w, b.h); }
 
   // ===== UI Screens =====
-  function setOverlay(html){ ui.innerHTML = html||''; }
+  function setOverlay(html){
+    ui.innerHTML = html||'';
+    ui.style.pointerEvents = html ? 'auto' : 'none';
+  }
   function showBoot(){ setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle" id="bootMsg">${bootMsgs[0]}</div><div class="progress-bar" style="width:320px"><i id="bootFill" style="transform:scaleX(0)"></i></div><div class="warn">Content warning: flashing lights, jumpscares, and stylized gore. Headphones recommended.</div><div class="flash" style="margin-top:10px">PRESS SPACE</div></div>`); }
   function tickBoot(){ bootProg = Math.min(100, bootProg + 1.5 + Math.random()*1.5); const fill=document.getElementById('bootFill'); const msg=document.getElementById('bootMsg'); if(fill) fill.style.transform = `scaleX(${bootProg/100})`; if(msg && bootProg>bootMsgIdx*20){ bootMsgIdx=(bootMsgIdx+1)%bootMsgs.length; msg.textContent = bootMsgs[bootMsgIdx]; } if(bootProg>=100){ enterAttract(); } }
   function enterAttract(){ startMenu(); }
@@ -877,7 +877,15 @@
     render();
   }
 
-  function startMenu(){ state=STATE.MENU; world.aim.ready=false; setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Blood Encore</div><div class="row" style="gap:10px"><button class="btn play good" id="playBtn">▶ Take the Stage</button><button class="btn" id="storyBtn">📖 Backstage Lore</button></div><div class="warn">Press SPACE or click to launch. Use Quality if performance dips.</div><div class="flash">PRESS SPACE</div></div>`); document.getElementById('playBtn').onclick=()=> startGame(); const storyBtn=document.getElementById('storyBtn'); if(storyBtn){ storyBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu }); } }
+  function startMenu(){
+    state=STATE.MENU;
+    world.aim.ready=false;
+    const hint = MENU_HINTS[Math.floor(Math.random()*MENU_HINTS.length)];
+    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Press SPACE or click to launch</div><div class="row" style="gap:10px"><button class="btn play good" id="playBtn">▶ Start Show</button><button class="btn" id="storyBtn">ℹ How to Play</button></div><div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
+    document.getElementById('playBtn').onclick=()=> startGame();
+    const storyBtn=document.getElementById('storyBtn');
+    if(storyBtn){ storyBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu }); }
+  }
   function startGame(){ state=STATE.PLAY; setOverlay(''); tutorialShown = false; loadLevel(1); updateHUD(); world.aim.ready=true; }
   function showGameOver(){ const final = Math.floor(world.score); setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`); document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); }; document.getElementById('menuBtn').onclick=()=> startMenu(); }
 
@@ -888,8 +896,8 @@
     ctx.save();
     ctx.globalAlpha = flick;
     const flare = ctx.createRadialGradient(W/2, 70, 60, W/2, 70, 460);
-    flare.addColorStop(0, 'rgba(244,114,182,.42)');
-    flare.addColorStop(0.45, 'rgba(56,189,248,.18)');
+    flare.addColorStop(0, 'rgba(239,68,68,.38)');
+    flare.addColorStop(0.45, 'rgba(127,29,29,.22)');
     flare.addColorStop(1, 'rgba(0,0,0,0)');
     rect(0, 0, W, H, flare);
     ctx.globalAlpha = 0.28 * flick;
