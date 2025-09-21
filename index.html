@@ -8,7 +8,7 @@
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#0a0a0f 0%, #050508 55%, #020204 100%);color:#f7edff;font:14px/1.45 "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Helvetica, Arial}
     .wrap{display:grid;grid-template-rows:auto 1fr auto;height:100%;background:radial-gradient(circle at 50% 115%, rgba(160,24,32,.24), rgba(4,4,6,0) 65%)}
-    header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.6rem;background:rgba(18,18,20,.92);border-bottom:1px solid rgba(239,68,68,.45);backdrop-filter:blur(12px);box-shadow:0 18px 36px rgba(0,0,0,.45);position:sticky;top:0;z-index:20}
+    header{display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem;background:rgba(18,18,20,.92);border-bottom:1px solid rgba(239,68,68,.45);backdrop-filter:blur(12px);box-shadow:0 18px 36px rgba(0,0,0,.45);position:sticky;top:0;z-index:20}
     header h1{margin:0;font:600 13px/1.2 "Cinzel", Trajan, serif;letter-spacing:.28em;text-transform:uppercase;color:#fde68a;text-shadow:0 0 12px rgba(239,68,68,.6)}
     header .sp{flex:1}
     .btn, select{cursor:pointer;user-select:none;border:1px solid rgba(148,163,184,.25);background:rgba(28,29,34,.88);border-radius:12px;padding:.5rem .85rem;display:inline-flex;align-items:center;gap:.5rem;color:#f9fafb;font-weight:600;letter-spacing:.02em;box-shadow:0 8px 18px rgba(0,0,0,.35);transition:background .2s ease, transform .2s ease}
@@ -18,7 +18,7 @@
     .danger{border-color:rgba(239,68,68,.55);background:rgba(127,29,29,.9);color:#fee2e2}
     .good{border-color:rgba(248,113,113,.35);background:rgba(153,27,27,.82);color:#fee2e2}
     .row{display:flex;align-items:center;gap:.6rem}
-    main{display:grid;place-items:center;padding:1rem}
+    main{display:grid;place-items:center;padding:0.5rem clamp(0.5rem,2vw,1rem)}
 
     /* CRT look */
     .crt{position:relative;max-width:960px;width:100%}
@@ -28,7 +28,7 @@
     body[data-fear='4'] .crt:after{box-shadow:inset 0 0 320px rgba(220,20,60,.65)}
     body[data-fear='4'] canvas{filter:saturate(1.12) contrast(1.05)}
 
-    canvas{background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
+    canvas{display:block;width:100%;height:auto;max-width:960px;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
     .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:20px 26px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12)}
     .hud-top,.hud-bottom{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
@@ -65,7 +65,7 @@
     .subtitle{opacity:.92;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:#fca5a5}
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
     .flash{animation:flash 1.6s infinite}
-    .score-list{display:grid;gap:.45rem;margin-top:18px;width:100%;max-width:360px}
+    .score-list{display:grid;gap:.45rem;margin-top:12px;width:100%;max-width:360px}
     .score-item{display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;border-radius:12px;background:rgba(14,14,16,.7);border:1px solid rgba(248,113,113,.2);color:#fef2ff;font-size:13px;text-transform:uppercase;letter-spacing:.12em}
     .score-item span:last-child{font-weight:700;letter-spacing:.1em;color:#ffe4f8}
     .score-list-title{margin-top:16px;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(248,189,189,.72)}
@@ -118,11 +118,14 @@
       <h1>Evil Peggle</h1>
       <div class="sp"></div>
       <div class="row">
-        <label>Quality <select id="quality"><option>Low</option><option selected>Med</option><option>High</option></select></label>
-        <button id="muteBtn" class="btn" title="Toggle audio">🔊 Audio</button>
-        <button id="settingsBtn" class="btn good" title="Open ritual settings">⚙ Settings</button>
+        <button id="menuBtn" class="btn" title="Open menu">☰ Menu</button>
       </div>
     </header>
+    <select id="quality" hidden>
+      <option>Low</option>
+      <option selected>Med</option>
+      <option>High</option>
+    </select>
     <main>
       <div class="crt">
         <canvas id="game" width="960" height="640"></canvas>
@@ -343,6 +346,7 @@
           <select id="qualitySelectModal">${qualityOpts}</select>
         </div>
         <div class="settings-actions">
+          <button class="btn" id="modalHomeBtn">⌂ Menu</button>
           <button class="btn danger" id="modalResetBtn">⟲ Reset Level</button>
           <button class="btn" id="modalCloseBtn">✖ Close</button>
           <button class="btn good" id="modalResumeBtn">✔ Resume</button>
@@ -360,6 +364,7 @@
     const audioToggle = modal.querySelector('#audioToggle');
     const tutorialToggle = modal.querySelector('#tutorialToggle');
     const qualityModal = modal.querySelector('#qualitySelectModal');
+    const homeButton = modal.querySelector('#modalHomeBtn');
     const resetButton = modal.querySelector('#modalResetBtn');
     const closeButton = modal.querySelector('#modalCloseBtn');
     const resumeButton = modal.querySelector('#modalResumeBtn');
@@ -406,6 +411,12 @@
       qualityModal.addEventListener('change', e => {
         qualitySel.value = e.target.value;
         applyQuality();
+      });
+    }
+    if(homeButton){
+      homeButton.addEventListener('click', () => {
+        closeSettings();
+        startMenu();
       });
     }
     if(resetButton){
@@ -489,10 +500,9 @@
 
   // ===== Controls =====
   const muteBtn = document.getElementById('muteBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const settingsBtn = document.getElementById('settingsBtn');
+  const menuBtn = document.getElementById('menuBtn');
   const qualitySel = document.getElementById('quality');
-  if(settingsBtn){ settingsBtn.onclick = () => openSettings(); }
+  if(menuBtn){ menuBtn.onclick = () => openSettings(); }
 
   // ===== Quality toggle =====
   const quality = { mul: 1 };
@@ -526,7 +536,7 @@
   // Whispers (procedural hiss + formant-ish tone)
   function whisper(){ if(!audioEnabled) return; ensureAudio(); const dur=0.9; const n=ac.createBuffer(1, ac.sampleRate*dur, ac.sampleRate); const d=n.getChannelData(0); for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*0.4*(1-t); } const s=ac.createBufferSource(); s.buffer=n; const g=ac.createGain(); g.gain.value=.03; s.connect(g); g.connect(ac.destination); s.start(); }
 
-  function syncAudioButton(){ muteBtn.textContent = audioEnabled? '🔊 Audio':'🔇 Muted'; }
+  function syncAudioButton(){ if(muteBtn) muteBtn.textContent = audioEnabled? '🔊 Audio':'🔇 Muted'; }
 
   function setAudio(flag, chime=true){
     const next = !!flag;
@@ -540,7 +550,7 @@
 
   syncAudioButton();
 
-  muteBtn.onclick = () => { setAudio(!audioEnabled); };
+  if(muteBtn){ muteBtn.onclick = () => { setAudio(!audioEnabled); }; }
 
   // ===== Sprites (embedded SVG -> Image) =====
   const Spr = {};
@@ -1175,9 +1185,6 @@
   }
 
   // ===== Reset/Button actions =====
-  if(resetBtn){
-    resetBtn.onclick = () => doResetLevel();
-  }
 
   // ===== Boot & start =====
   showBoot();
