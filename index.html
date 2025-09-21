@@ -2441,6 +2441,7 @@
             <textarea id="labData" spellcheck="false" style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
             <div class="settings-actions minor" style="gap:8px">
               <button class="btn" id="labExport">⧉ Export Current</button>
+              <button class="btn" id="labDownload">⬇ Download</button>
               <button class="btn good" id="labSave">💾 Save</button>
               <button class="btn" id="labPlayTemp">▶ Play Once</button>
             </div>
@@ -2480,6 +2481,23 @@
         const payload = { version: VERSION, pegs: serializeCurrentLevel() };
         dataInput.value = JSON.stringify(payload, null, 2);
         showMsg('Current level exported to JSON.');
+      });
+
+      document.getElementById('labDownload')?.addEventListener('click', ()=>{
+        const payload = parseLevelPayload(dataInput.value.trim());
+        if(!payload.length){ showMsg('Need valid level data to download.', '#f87171'); return; }
+        const safeName = (nameInput.value.trim() || 'custom-level').replace(/[^a-z0-9-_]+/gi,'_').slice(0,48) || 'custom-level';
+        const text = JSON.stringify({ version: VERSION, pegs: serializePegs(payload) }, null, 2);
+        const blob = new Blob([text], { type:'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeName}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showMsg(`Downloaded ${safeName}.json`);
       });
 
       document.getElementById('labSave')?.addEventListener('click', ()=>{
@@ -2550,10 +2568,12 @@
       : '<button class="btn" id="freeplayBtn">🎯 Freeplay</button>';
     const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Beat level 1 in Story Run to unlock Freeplay.</div>' : '';
     const resumeLabel = settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS? `Continue (Level ${settings.storyProgress})` : '▶ Story Run';
-    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="loreBtn">ℹ How to Play</button><button class="btn" id="creditsBtn">📜 Credits</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
+    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="labBtn">🧪 Level Lab</button><button class="btn" id="loreBtn">ℹ How to Play</button><button class="btn" id="creditsBtn">📜 Credits</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
     document.getElementById('playBtn').onclick=()=> startGame();
     const freeBtn=document.getElementById('freeplayBtn');
     if(freeBtn && !freeplayLocked) freeBtn.onclick = () => showFreeplayMenu();
+    const labBtn=document.getElementById('labBtn');
+    if(labBtn) labBtn.onclick = () => showLevelLab();
     const loreBtn=document.getElementById('loreBtn');
     if(loreBtn) loreBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu });
     const creditsBtn=document.getElementById('creditsBtn');
