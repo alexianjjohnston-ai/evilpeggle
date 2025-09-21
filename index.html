@@ -141,18 +141,17 @@
                 <span class="label">Balls</span>
                 <span class="value" id="ballsLabel">10</span>
               </div>
+              <div class="hud-chip">
+                <span class="label">Score</span>
+                <span class="value" id="scoreLabel">0</span>
+              </div>
             </div>
+            <div class="sp"></div>
             <div class="fear-widget" id="fearWidget" aria-live="polite">
               <span class="label">Fear</span>
               <span class="tier" id="fearStageLabel">Calm</span>
               <div class="fear-bar"><i id="fearFill"></i></div>
               <span class="value" id="fearLabel">0%</span>
-            </div>
-            <div class="hud-cluster" style="justify-content:flex-end">
-              <div class="hud-chip">
-                <span class="label">Score</span>
-                <span class="value" id="scoreLabel">0</span>
-              </div>
             </div>
           </div>
           <div class="hud-bottom">
@@ -1329,7 +1328,7 @@
       return `<button type="button" class="score-card" data-level="${level}">Level ${level}<span>Best ${formatScore(getBestScore(level))}</span></button>`;
     }).join('');
     const totalNote = unlockedCount < TOTAL_LEVELS && !settings.storyCleared ? `<div class="warn" style="font-size:11px">Clear more Story levels to unlock additional Freeplay hunts.</div>` : '';
-    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-grid">${cards}</div>${totalNote}<div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
+    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-list" style="max-height:240px;width:100%;max-width:420px;overflow:auto">${cards}</div>${totalNote}<div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
     document.querySelectorAll('.score-card').forEach(btn=>{
       btn.onclick = ()=> startFreeplay(Number(btn.dataset.level));
     });
