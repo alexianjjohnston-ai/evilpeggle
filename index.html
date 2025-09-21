@@ -1005,11 +1005,13 @@
       setOverlay('');
       state = STATE.PLAY;
       world.aim.ready = true;
+      syncHUDVisibility();
     };
     document.getElementById('tutorialBegin').onclick = () => {
       runTutorialHints(()=>{
         state = STATE.PLAY;
         world.aim.ready = true;
+        syncHUDVisibility();
       });
     };
   }
