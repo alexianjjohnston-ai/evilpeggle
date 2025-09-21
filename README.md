@@ -1,37 +1,56 @@
-# Nightmare Peggle — One-File Horror Arcade 🎯👁️
+# Nightmare Peggle v1.1 👁️🎯
 
-A cursed, horror-themed spin on Peggle — contained entirely in a single HTML file.  
-Playable directly in the browser, with CRT distortion, procedural audio, whispers, and jumpscares.  
-
----
-
-## 🎮 Gameplay
-- **Aim**: Move your mouse (desktop) or drag (mobile).
-- **Shoot**: Click or tap to fire.
-- **Goal**: Clear all **red cursed pegs** to advance.
-- **Catch**: Land in the **bucket monster** to regain a ball.
-- **Powerups**:  
-  - 🔥 **Flaming Skull** — pierces through pegs.  
-  - 🧟 **Rotten Eyeball** — shrinks your bucket until caught.  
-- **Fear Meter**:  
-  - Fear rises with hits.  
-  - At higher levels: whispers → distortions → glitches → jumpscares.
+A single-file horror tribute to Peggle. Fire an eldritch eyeball through cursed pegs, feed a ravenous bucket trap, and ride the Fear Meter from uneasy ambience to full-on glitches and jump-scares.
 
 ---
 
-## ✨ Features
-- **Fullscreen responsive scaling** — works cleanly on desktop & mobile, no scrolling.
-- **Fear bar at the top** — unobtrusive but always visible.
-- **HUD redesign** — large score display + pill badges for level, balls, streak.
-- **CRT aesthetic** — screen glow, flicker, and ambient “dust” particles.
-- **Procedural audio** — tones, whispers, static bursts, and sub-boom rumbles.
-- **Dynamic difficulty** — fear system unlocks more intense effects as it rises.
-- **One file only** — no external assets, self-contained `index.html`.
+## ✨ What’s New in 1.1
+- **Fresh Power Suite** – Astral Prism, Voltaic Lash, and Graven Well replace the old power-ups with unique mechanics and bespoke sprites.
+- **Scare Pass** – The bucket trap is now a fanged, breathing maw with nastier audio.
+- **Refined HUD** – Ritual progress bar, polished option wheels, mobile/fear tweaks.
+- **Release polish** – Credits screen, responsive fixes, version tagging.
+
+---
+
+## 🎮 Core Gameplay
+| Action | How |
+| --- | --- |
+| Aim | Move the mouse or drag (mobile). |
+| Shoot | Click / tap / press Space. |
+| Goal | Clear every **cursed red peg** before you run out of eyeballs. |
+| Catch | Land in the bucket beast to reclaim a ball and juice your streak. |
+
+### Power-Ups
+- **Astral Prism** – Phase through two pegs before gravity snaps back.
+- **Voltaic Lash** – Chain lightning across nearby targets with each hit.
+- **Graven Well** – Detonate a gravity blast to shred clustered pegs.
+
+Fear rises as you sustain streaks; higher tiers distort the CRT, spawn hallucinations, and eventually trigger jumpscares.
 
 ---
 
 ## 🛠️ Setup
-1. Clone the repo:
-   ```bash
-   git clone https://github.com/alexianjjohnston-ai/evilpeggle.git
-   cd evilpeggle
+1. Clone the repo:  
+   `git clone https://github.com/alexianjjohnston-ai/evilpeggle.git`
+2. Open `index.html` in any modern browser.
+No build step, no external assets – everything lives inside `index.html`.
+
+---
+
+## 🎚️ Controls & Options
+- **Main Menu** – Story Run, Freeplay, Lore primer, Credits screen.
+- **Settings Panel** (ESC):
+  - Audio slider mix (music/effects).
+  - Blood & fear toggles.
+  - Device / Quality option wheels (Menu-only).
+  - Profile tools + autosaving.
+
+---
+
+## 👥 Credits
+- Creative Direction & Art – **Alex Johnston**
+- Engineering & Audio Design – **ChatGPT (OpenAI Codex)**
+- Inspired by Peggle® from **PopCap Games**
+- Fonts – **Cinzel**, **Inter**
+
+Wear headphones, aim true, and feed the fear.
