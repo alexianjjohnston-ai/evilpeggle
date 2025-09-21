@@ -1688,6 +1688,150 @@
     return arr;
   }
 
+  const LEVEL_PARTS = [
+    {
+      id: 'ring-tight',
+      name: 'Ring • Tight',
+      description: 'Eight-peg circle with alternating cursed pegs.',
+      create(){
+        const radius = 70;
+        const count = 8;
+        const pegs=[];
+        for(let i=0;i<count;i++){
+          const angle = i/count * Math.PI * 2;
+          pegs.push({
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius,
+            type: i%2===0 ? 'cursed' : 'normal'
+          });
+        }
+        pegs.push({ x:0, y:0, type:'normal' });
+        return pegs;
+      }
+    },
+    {
+      id: 'ring-wide',
+      name: 'Ring • Wide',
+      description: 'Large halo, every third peg cursed for gated arenas.',
+      create(){
+        const radius = 120;
+        const count = 12;
+        const pegs=[];
+        for(let i=0;i<count;i++){
+          const angle = i/count * Math.PI * 2;
+          pegs.push({
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius,
+            type: i%3===0 ? 'cursed' : 'normal'
+          });
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'column-stack',
+      name: 'Column Stack',
+      description: 'Five-peg vertical column with cursed anchors.',
+      create(){
+        const pegs=[];
+        for(let i=0;i<5;i++){
+          const offset = (i-2) * 48;
+          pegs.push({ x:0, y:offset, type: (i===0 || i===4) ? 'cursed' : 'normal' });
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'bridge-line',
+      name: 'Bridge Line',
+      description: 'Seven-peg horizontal bridge, cursed on the ends.',
+      create(){
+        const spacing = 44;
+        const pegs=[];
+        for(let i=0;i<7;i++){
+          pegs.push({
+            x: (i-3) * spacing,
+            y: 0,
+            type: (i===0 || i===6) ? 'cursed' : 'normal'
+          });
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'burst-cluster',
+      name: 'Burst Cluster',
+      description: 'Tight cluster with a cursed core and radiating normals.',
+      create(){
+        return [
+          { x:0, y:0, type:'cursed' },
+          { x:36, y:0, type:'normal' },
+          { x:-36, y:0, type:'normal' },
+          { x:0, y:36, type:'normal' },
+          { x:0, y:-36, type:'normal' },
+          { x:26, y:26, type:'normal' },
+          { x:-26, y:26, type:'normal' },
+          { x:26, y:-26, type:'normal' },
+          { x:-26, y:-26, type:'normal' }
+        ];
+      }
+    },
+    {
+      id: 'steel-gate',
+      name: 'Steel Gate',
+      description: 'Three steel pegs to force angle play.',
+      create(){
+        return [
+          { x:-60, y:0, type:'steel' },
+          { x:0, y:0, type:'steel' },
+          { x:60, y:0, type:'steel' }
+        ];
+      }
+    },
+    {
+      id: 'arc-fan',
+      name: 'Arc Fan',
+      description: 'Curved fan of pegs with a cursed center.',
+      create(){
+        const pegs=[];
+        const radius = 90;
+        const start = -Math.PI/2 - 0.8;
+        const step = 0.32;
+        for(let i=0;i<7;i++){
+          const angle = start + i * step;
+          pegs.push({
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius,
+            type: i===3 ? 'cursed' : 'normal'
+          });
+        }
+        return pegs;
+      }
+    }
+  ];
+
+  function getLevelPart(id){
+    return LEVEL_PARTS.find(part => part.id === id) || null;
+  }
+
+  function instantiateLevelPart(part, options={}){
+    if(!part || typeof part.create !== 'function') return [];
+    const { x= W/2, y= H/2, rotation=0 } = options;
+    const rad = rotation * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const base = part.create(options) || [];
+    const pegs=[];
+    for(const rel of base){
+      const px = x + rel.x * cos - rel.y * sin;
+      const py = y + rel.x * sin + rel.y * cos;
+      const type = typeof rel.type === 'string' ? rel.type : 'normal';
+      const radius = Number.isFinite(rel.r) ? rel.r : 20;
+      pegs.push(peg(px, py, type, radius));
+    }
+    return pegs;
+  }
+
   const LEVELS = [
     tutorialGarden,
     emberOrbit,
@@ -2403,55 +2547,15 @@
     stopGame();
     state = STATE.MENU;
 
-    const render = () => {
-      const entries = getCustomLevelEntries();
-      const list = entries.length
-        ? entries.map(entry => {
-            const time = entry.updated ? new Date(entry.updated).toLocaleString() : '—';
-            return `<div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px" data-name="${escHTML(entry.name)}">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-                <div>
-                  <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px">${escHTML(entry.name)}</span>
-                  <div style="font-size:11px;color:rgba(226,232,240,.7)">${time}</div>
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button class="btn" data-action="play">▶ Play</button>
-                  <button class="btn" data-action="copy">⧉ Copy</button>
-                  <button class="btn danger" data-action="delete">✖ Delete</button>
-                </div>
-              </div>
-            </div>`;
-          }).join('')
-        : '<div class="warn">No custom levels saved yet. Paste JSON below or export the current board.</div>';
-
-      setOverlay(`
-        <div class="menu story level-lab" style="max-width:640px;width:100%;display:flex;flex-direction:column;gap:18px">
-          <div class="title">Level Lab (Beta)</div>
-          <p>Import, save, and launch custom layouts. Share the JSON blob with friends to trade horrors.</p>
-          <section class="settings-section" style="gap:12px">
-            <h3>Saved Levels</h3>
-            <div id="labList" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow:auto">${list}</div>
-          </section>
-          <section class="settings-section" style="gap:12px">
-            <h3>Editor</h3>
-            <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fda4af">
-              Level Name
-              <input type="text" id="labName" value="${escHTML(customSessionName || 'Custom Draft')}" maxlength="48" style="padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(20,20,26,.92);color:#f8fafc;font-weight:600">
-            </label>
-            <textarea id="labData" spellcheck="false" style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
-            <div class="settings-actions minor" style="gap:8px">
-              <button class="btn" id="labExport">⧉ Export Current</button>
-              <button class="btn" id="labDownload">⬇ Download</button>
-              <button class="btn good" id="labSave">💾 Save</button>
-              <button class="btn" id="labPlayTemp">▶ Play Once</button>
-            </div>
-            <div class="warn" id="labMessage"></div>
-          </section>
-          <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
-        </div>`);
-
-      attach(entries);
+    const builder = {
+      pegs: deserializePegs(serializeCurrentLevel()),
+      placements: [],
+      selectedPartId: LEVEL_PARTS[0]?.id || '',
+      lastPosition: { x: Math.round(W/2), y: 320, rotation: 0 }
     };
+    if(!Array.isArray(builder.pegs)) builder.pegs = [];
+
+    let pendingFlash = null;
 
     const parseLevelPayload = (text) => {
       if(!text) return [];
@@ -2465,10 +2569,113 @@
       return [];
     };
 
+    const render = (flash=null) => {
+      if(flash) pendingFlash = flash;
+      const entries = getCustomLevelEntries();
+      const list = entries.length
+        ? entries.map(entry => {
+            const time = entry.updated ? new Date(entry.updated).toLocaleString() : '—';
+            return `<div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px" data-name="${escHTML(entry.name)}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div>
+                  <span style="font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px">${escHTML(entry.name)}</span>
+                  <div style="font-size:11px;color:rgba(226,232,240,.7)">${time}</div>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <button class="btn" data-action="play">▶ Play</button>
+                  <button class="btn" data-action="copy">⧉ Load</button>
+                  <button class="btn danger" data-action="delete">✖ Delete</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')
+        : '<div class="warn">No custom levels saved yet. Add parts or load JSON to craft your first haunt.</div>';
+
+      const partOptions = LEVEL_PARTS.map(part => `<option value="${part.id}" ${part.id===builder.selectedPartId? 'selected':''}>${escHTML(part.name)}</option>`).join('');
+      const partDescription = escHTML(getLevelPart(builder.selectedPartId)?.description || 'Select a level part to see details.');
+      const defaultName = escHTML(customSessionName || 'Custom Draft');
+
+      setOverlay(`
+        <div class="menu story level-lab" style="max-width:760px;width:100%;display:flex;flex-direction:column;gap:18px">
+          <div class="title">Level Lab</div>
+          <p>Assemble arenas from curated parts, then export or import JSON layouts to share the torment.</p>
+          <section class="settings-section" style="gap:12px">
+            <h3>Saved Levels</h3>
+            <div id="labList" style="display:flex;flex-direction:column;gap:10px;max-height:200px;overflow:auto">${list}</div>
+          </section>
+          <section class="settings-section" style="gap:12px">
+            <h3>Level Parts</h3>
+            <div class="settings-stack">
+              <div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:12px">
+                <div class="setting-copy">
+                  <span>Assembly</span>
+                  <small>Select a part, set placement, then stack it into the stage.</small>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(248,189,189,.85)">
+                    Part
+                    <select id="labPartSelect" style="min-width:200px">${partOptions}</select>
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
+                    X
+                    <input type="number" id="labPartX" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
+                    Y
+                    <input type="number" id="labPartY" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
+                  </label>
+                  <label style="display:flex;flex-direction:column;gap:4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(226,232,240,.75)">
+                    Rotate°
+                    <input type="number" id="labPartRot" style="width:92px;padding:.45rem .6rem;border-radius:10px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,24,.92);color:#f8fafc" />
+                  </label>
+                  <button class="btn" id="labAddPart">＋ Add Part</button>
+                  <button class="btn danger" id="labClearParts">🗙 Clear All</button>
+                </div>
+                <div class="warn" id="labPartDescription">${partDescription}</div>
+                <div class="warn" id="labBuilderSummary" style="color:#facc15"></div>
+              </div>
+              <div class="setting-tile" style="flex-direction:column;align-items:stretch;gap:8px">
+                <div class="setting-copy">
+                  <span>Placed Parts</span>
+                  <small>Remove a placement to tweak it. Loading JSON clears this list.</small>
+                </div>
+                <div id="labPlacementList" style="max-height:160px;overflow:auto;display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+            </div>
+          </section>
+          <section class="settings-section" style="gap:12px">
+            <h3>Editor</h3>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#fda4af">
+              Level Name
+              <input type="text" id="labName" value="${defaultName}" maxlength="48" style="padding:.6rem .8rem;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(20,20,26,.92);color:#f8fafc;font-weight:600">
+            </label>
+            <textarea id="labData" spellcheck="false" placeholder="JSON layout appears here after adding parts or importing." style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
+            <div class="settings-actions minor" style="gap:8px">
+              <button class="btn" id="labExport">⧉ Export Builder</button>
+              <button class="btn" id="labLoadJson">⬆ Load JSON</button>
+              <button class="btn" id="labDownload">⬇ Download</button>
+              <button class="btn good" id="labSave">💾 Save</button>
+              <button class="btn" id="labPlayTemp">▶ Play Once</button>
+            </div>
+            <div class="warn" id="labMessage"></div>
+          </section>
+          <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
+        </div>`);
+
+      attach(entries);
+    };
+
     const attach = (entries) => {
       const nameInput = document.getElementById('labName');
       const dataInput = document.getElementById('labData');
       const messageEl = document.getElementById('labMessage');
+      const partSelect = document.getElementById('labPartSelect');
+      const partXInput = document.getElementById('labPartX');
+      const partYInput = document.getElementById('labPartY');
+      const partRotInput = document.getElementById('labPartRot');
+      const partDescriptionEl = document.getElementById('labPartDescription');
+      const summaryEl = document.getElementById('labBuilderSummary');
+      const placementList = document.getElementById('labPlacementList');
 
       const showMsg = (msg, color='#facc15') => {
         if(messageEl){
@@ -2477,17 +2684,133 @@
         }
       };
 
-      document.getElementById('labExport')?.addEventListener('click', ()=>{
-        const payload = { version: VERSION, pegs: serializeCurrentLevel() };
+      const updatePartDescription = () => {
+        if(!partDescriptionEl) return;
+        const part = getLevelPart(partSelect?.value || builder.selectedPartId);
+        partDescriptionEl.textContent = part?.description || 'Select a level part to begin.';
+      };
+
+      const syncTextarea = () => {
+        if(!dataInput) return;
+        const payload = { version: VERSION, pegs: serializePegs(builder.pegs) };
         dataInput.value = JSON.stringify(payload, null, 2);
-        showMsg('Current level exported to JSON.');
+      };
+
+      const updateSummary = () => {
+        if(!summaryEl) return;
+        if(!builder.pegs.length){
+          summaryEl.textContent = 'No pegs yet. Add parts or load JSON.';
+          summaryEl.style.color = '#facc15';
+          return;
+        }
+        let cursed=0; let steel=0; let out=0;
+        for(const p of builder.pegs){
+          if(p.type==='cursed') cursed++;
+          else if(p.type==='steel') steel++;
+          if(p.x < 32 || p.x > W-32 || p.y < 120 || p.y > H-32) out++;
+        }
+        summaryEl.textContent = `Pegs: ${builder.pegs.length} • Cursed ${cursed} • Steel ${steel}` + (out>0 ? ` • ${out} outside arena` : '');
+        summaryEl.style.color = out>0 ? '#f87171' : '#facc15';
+      };
+
+      const renderPlacements = () => {
+        if(!placementList) return;
+        if(!builder.placements.length){
+          placementList.innerHTML = '<div class="warn" style="margin:0">No tracked parts yet.</div>';
+          return;
+        }
+        placementList.innerHTML = builder.placements.map((placement, index) => {
+          const label = escHTML(placement.name || placement.id);
+          const coord = `${Math.round(placement.x)}, ${Math.round(placement.y)}°${Math.round(placement.rotation)}`;
+          return `<div class="score-item" style="gap:.4rem" data-index="${index}">
+            <span>${label}</span>
+            <span>${coord} · ${placement.pegs.length}</span>
+            <button class="btn danger" data-remove="${index}" style="padding:.25rem .4rem;font-size:11px">✖</button>
+          </div>`;
+        }).join('');
+        placementList.querySelectorAll('button[data-remove]').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const idx = Number(btn.dataset.remove);
+            const placement = builder.placements[idx];
+            if(!placement) return;
+            builder.pegs = builder.pegs.filter(p => !placement.pegs.includes(p));
+            builder.placements.splice(idx,1);
+            showMsg(`Removed ${placement.name || placement.id}.`);
+            updateOutputs();
+          });
+        });
+      };
+
+      const updateOutputs = () => {
+        syncTextarea();
+        updateSummary();
+        renderPlacements();
+      };
+
+      if(partSelect){
+        partSelect.value = builder.selectedPartId || partSelect.value;
+        partSelect.addEventListener('change', () => {
+          builder.selectedPartId = partSelect.value;
+          updatePartDescription();
+        });
+        updatePartDescription();
+      }
+      if(partXInput) partXInput.value = Math.round(builder.lastPosition?.x ?? W/2);
+      if(partYInput) partYInput.value = Math.round(builder.lastPosition?.y ?? 320);
+      if(partRotInput) partRotInput.value = Math.round(builder.lastPosition?.rotation ?? 0);
+
+      nameInput?.addEventListener('input', () => {
+        customSessionName = nameInput.value;
       });
 
-      document.getElementById('labDownload')?.addEventListener('click', ()=>{
-        const payload = parseLevelPayload(dataInput.value.trim());
-        if(!payload.length){ showMsg('Need valid level data to download.', '#f87171'); return; }
-        const safeName = (nameInput.value.trim() || 'custom-level').replace(/[^a-z0-9-_]+/gi,'_').slice(0,48) || 'custom-level';
-        const text = JSON.stringify({ version: VERSION, pegs: serializePegs(payload) }, null, 2);
+      document.getElementById('labAddPart')?.addEventListener('click', () => {
+        const part = getLevelPart(partSelect?.value || builder.selectedPartId);
+        if(!part){ showMsg('Pick a level part first.', '#f87171'); return; }
+        const x = Number(partXInput?.value);
+        const y = Number(partYInput?.value);
+        const rotation = Number(partRotInput?.value || 0);
+        if(!Number.isFinite(x) || !Number.isFinite(y)){
+          showMsg('Enter numeric placement values.', '#f87171');
+          return;
+        }
+        const rot = Number.isFinite(rotation) ? rotation : 0;
+        builder.selectedPartId = part.id;
+        builder.lastPosition = { x, y, rotation: rot };
+        const newPegs = instantiateLevelPart(part, { x, y, rotation: rot });
+        if(!newPegs.length){ showMsg('That part produced no pegs.', '#f87171'); return; }
+        builder.pegs.push(...newPegs);
+        builder.placements.push({ id: part.id, name: part.name, x, y, rotation: rot, pegs: newPegs });
+        showMsg(`Added ${part.name} (${newPegs.length} pegs).`);
+        updateOutputs();
+      });
+
+      document.getElementById('labClearParts')?.addEventListener('click', () => {
+        builder.pegs = [];
+        builder.placements = [];
+        showMsg('Cleared builder layout.');
+        updateOutputs();
+      });
+
+      document.getElementById('labExport')?.addEventListener('click', () => {
+        updateOutputs();
+        showMsg('Builder JSON refreshed.');
+      });
+
+      document.getElementById('labLoadJson')?.addEventListener('click', () => {
+        const payload = parseLevelPayload(dataInput?.value?.trim() || '');
+        if(!payload.length){ showMsg('Need valid JSON with a `pegs` array.', '#f87171'); return; }
+        builder.pegs = deserializePegs(payload);
+        builder.placements = [];
+        builder.lastPosition = { x: Math.round(W/2), y: 320, rotation: 0 };
+        showMsg(`Loaded ${builder.pegs.length} pegs from JSON.`);
+        updateOutputs();
+      });
+
+      document.getElementById('labDownload')?.addEventListener('click', () => {
+        if(!builder.pegs.length){ showMsg('Add some pegs before downloading.', '#f87171'); return; }
+        const safeName = (nameInput?.value?.trim() || 'custom-level').replace(/[^a-z0-9-_]+/gi,'_').slice(0,48) || 'custom-level';
+        const text = JSON.stringify({ version: VERSION, pegs: serializePegs(builder.pegs) }, null, 2);
         const blob = new Blob([text], { type:'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -2500,20 +2823,18 @@
         showMsg(`Downloaded ${safeName}.json`);
       });
 
-      document.getElementById('labSave')?.addEventListener('click', ()=>{
-        const payload = parseLevelPayload(dataInput.value.trim());
-        if(!payload.length){ showMsg('Paste or export a level first.', '#f87171'); return; }
-        const key = saveCustomLevel(nameInput.value, payload);
-        showMsg(`Saved custom level: ${key}`);
-        render();
+      document.getElementById('labSave')?.addEventListener('click', () => {
+        if(!builder.pegs.length){ showMsg('Add some pegs before saving.', '#f87171'); return; }
+        const key = saveCustomLevel(nameInput?.value, builder.pegs);
+        customSessionName = key;
+        render({ text: `Saved custom level: ${key}`, color: '#facc15' });
       });
 
-      document.getElementById('labPlayTemp')?.addEventListener('click', ()=>{
-        const payload = parseLevelPayload(dataInput.value.trim());
-        if(!payload.length){ showMsg('Need valid level data to play.', '#f87171'); return; }
-        customSessionName = nameInput.value.trim() || 'Custom Draft';
+      document.getElementById('labPlayTemp')?.addEventListener('click', () => {
+        if(!builder.pegs.length){ showMsg('Add some pegs before playing.', '#f87171'); return; }
+        customSessionName = nameInput?.value?.trim() || 'Custom Draft';
         setOverlay('');
-        loadCustomLayout(payload);
+        loadCustomLayout(serializePegs(builder.pegs));
         gameMode = MODE.FREEPLAY;
         world.score = 0;
         state = STATE.PLAY;
@@ -2521,7 +2842,7 @@
         syncHUDVisibility();
       });
 
-      document.getElementById('labBack')?.addEventListener('click', ()=> startMenu());
+      document.getElementById('labBack')?.addEventListener('click', () => startMenu());
 
       const listEl = document.getElementById('labList');
       listEl?.querySelectorAll('.setting-tile').forEach(tile => {
@@ -2534,18 +2855,26 @@
             startCustomLevel(name);
           } else if(action==='delete'){
             deleteCustomLevel(name);
-            render();
+            render({ text: `Deleted ${name}.`, color:'#f87171' });
           } else if(action==='copy'){
             const entry = customLevels[name];
             if(!entry) return;
-            const text = JSON.stringify({ version: VERSION, pegs: entry.pegs }, null, 2);
-            dataInput.value = text;
-            nameInput.value = entry.name;
-            if(navigator.clipboard){ navigator.clipboard.writeText(text).catch(()=>{}); }
-            showMsg(`Copied ${name} to editor.`);
+            builder.pegs = deserializePegs(entry.pegs);
+            builder.placements = [];
+            builder.lastPosition = { x: Math.round(W/2), y: 320, rotation: 0 };
+            customSessionName = entry.name;
+            if(nameInput) nameInput.value = entry.name;
+            showMsg(`Loaded ${name} into builder.`);
+            updateOutputs();
           }
         });
       });
+
+      updateOutputs();
+      if(pendingFlash){
+        showMsg(pendingFlash.text, pendingFlash.color);
+        pendingFlash = null;
+      }
     };
 
     render();
@@ -2894,24 +3223,3 @@
 </script>
 </body>
 </html>
-    if(musicSlider){
-      updateRangeFill(musicSlider);
-      musicSlider.addEventListener('input', e => {
-        const value = clamp01(parseFloat(e.target.value));
-        settings.musicVolume = value;
-        if(musicValue) musicValue.textContent = `${Math.round(value*100)}%`;
-        updateRangeFill(e.target);
-        persistSettings();
-        updateMusicGain();
-      });
-    }
-    if(effectsSlider){
-      updateRangeFill(effectsSlider);
-      effectsSlider.addEventListener('input', e => {
-        const value = clamp01(parseFloat(e.target.value));
-        settings.effectsVolume = value;
-        if(effectsValue) effectsValue.textContent = `${Math.round(value*100)}%`;
-        updateRangeFill(e.target);
-        persistSettings();
-      });
-    }
