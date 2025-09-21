@@ -125,10 +125,18 @@
     .settings-stack{display:flex;flex-direction:column;gap:14px}
     .setting-tile{padding:14px 18px;border-radius:16px;background:rgba(32,34,40,.88);border:1px solid rgba(248,113,113,.22);display:flex;justify-content:space-between;align-items:center;gap:18px;font-size:13px}
     .setting-tile.slider{align-items:flex-end;}
-    .setting-copy{display:flex;flex-direction:column;gap:4px;max-width:70%}
+    .setting-copy{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left}
     .setting-copy span{font-weight:600;color:#f8fafc;letter-spacing:.05em;text-transform:uppercase;font-size:11px}
     .setting-copy small{font-size:11px;color:rgba(226,232,240,.7);letter-spacing:.02em;text-transform:none;font-weight:400}
     .setting-control{display:flex;align-items:center;justify-content:center}
+    .option-wheel{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;width:100%}
+    .option-wheel button{flex:0 0 26px;height:26px;border-radius:50%;border:1px solid rgba(248,113,113,.4);background:rgba(18,19,27,.82);color:#f8fafc;font-weight:700;cursor:pointer;transition:transform .2s ease,border-color .2s ease}
+    .option-wheel button:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.7)}
+    .option-wheel button:active{transform:translateY(0)}
+    .option-wheel .option-track{flex:1;display:flex;overflow:hidden;border-radius:14px;border:1px solid rgba(248,113,113,.24);background:rgba(24,26,32,.75);box-shadow:inset 0 4px 16px rgba(0,0,0,.4);height:34px}
+    .option-wheel .option-track span{flex:1;display:flex;align-items:center;justify-content:center;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:#f8fafc;cursor:pointer;user-select:none;transition:background .2s ease,color .2s ease}
+    .option-wheel .option-track span:hover{background:rgba(148,163,184,.25)}
+    .option-wheel .option-track span.active{background:rgba(248,113,113,.32);color:#fde68a;border-left:1px solid rgba(248,113,113,.45);border-right:1px solid rgba(248,113,113,.45);box-shadow:inset 0 0 16px rgba(248,113,113,.35)}
     .slider-control{display:flex;align-items:center;gap:10px;min-width:180px}
     .slider-value{font-weight:600;font-size:12px;color:#fda4af;letter-spacing:.08em;text-transform:uppercase}
     .settings-panel input[type="text"]{width:100%;padding:.65rem .85rem;border-radius:12px;border:1px solid rgba(248,113,113,.38);background:rgba(14,14,20,.94);color:#ffffff;font-weight:600;letter-spacing:.05em;box-shadow:inset 0 0 14px rgba(0,0,0,.45)}
@@ -496,18 +504,22 @@
               <div class="setting-copy">
                 <span id="deviceLabel">Device Mode</span>
                 <small>Choose your hardware for tailored prompts.</small>
-              </div>
-              <div class="setting-control">
-                <select id="deviceSelect" aria-labelledby="deviceLabel">${deviceOpts}</select>
+                <div class="option-wheel" aria-labelledby="deviceLabel">
+                  <button type="button" id="devicePrevBtn" aria-label="Previous device">‹</button>
+                  <div class="option-track" id="deviceOptions"></div>
+                  <button type="button" id="deviceNextBtn" aria-label="Next device">›</button>
+                </div>
               </div>
             </div>
             <div class="setting-tile">
               <div class="setting-copy">
                 <span id="qualityLabel">Visual Quality</span>
                 <small>Adjust particles, splatters, and hallucinations.</small>
-              </div>
-              <div class="setting-control">
-                <select id="qualitySelectModal" aria-labelledby="qualityLabel">${qualityOpts}</select>
+                <div class="option-wheel" aria-labelledby="qualityLabel">
+                  <button type="button" id="qualityPrevBtn" aria-label="Lower quality">‹</button>
+                  <div class="option-track" id="qualityOptions"></div>
+                  <button type="button" id="qualityNextBtn" aria-label="Higher quality">›</button>
+                </div>
               </div>
             </div>
             <div class="setting-tile">
@@ -549,8 +561,12 @@
     const fearToggle = modal.querySelector('#fearToggle');
     const audioToggle = modal.querySelector('#audioToggle');
     const tutorialToggle = modal.querySelector('#tutorialToggle');
-    const deviceSelect = modal.querySelector('#deviceSelect');
-    const qualityModal = modal.querySelector('#qualitySelectModal');
+    const deviceTrack = modal.querySelector('#deviceOptions');
+    const devicePrevBtn = modal.querySelector('#devicePrevBtn');
+    const deviceNextBtn = modal.querySelector('#deviceNextBtn');
+    const qualityTrack = modal.querySelector('#qualityOptions');
+    const qualityPrevBtn = modal.querySelector('#qualityPrevBtn');
+    const qualityNextBtn = modal.querySelector('#qualityNextBtn');
     const homeButton = modal.querySelector('#modalHomeBtn');
     const resetButton = modal.querySelector('#modalResetBtn');
     const closeButton = modal.querySelector('#modalCloseBtn');
@@ -608,24 +624,67 @@
         persistSettings();
       });
     }
-    if(deviceSelect){
-      deviceSelect.addEventListener('change', e => {
-        const value = e.target.value;
-        if(DEVICE_OPTIONS.some(opt => opt.id === value)){
-          settings.deviceType = value;
+    const deviceOptionIds = DEVICE_OPTIONS.map(opt => opt.id);
+    const renderDeviceOptions = () => {
+      if(!deviceTrack) return;
+      if(!DEVICE_OPTIONS.some(opt => opt.id === settings.deviceType)){
+        settings.deviceType = DEVICE_OPTIONS[0]?.id || 'laptop';
+        persistSettings();
+      }
+      deviceTrack.innerHTML = DEVICE_OPTIONS.map(opt => `<span data-id="${opt.id}" class="${opt.id===settings.deviceType? 'active':''}">${escHTML(opt.label)}</span>`).join('');
+    };
+    const cycleDevice = (dir) => {
+      const idx = Math.max(0, deviceOptionIds.indexOf(settings.deviceType));
+      const nextIdx = (idx + dir + deviceOptionIds.length) % deviceOptionIds.length;
+      settings.deviceType = deviceOptionIds[nextIdx];
+      persistSettings();
+      renderDeviceOptions();
+      checkOrientationLock();
+    };
+    renderDeviceOptions();
+    if(deviceTrack){
+      deviceTrack.addEventListener('click', e => {
+        const span = e.target.closest('span[data-id]');
+        if(!span) return;
+        const id = span.dataset.id;
+        if(id && DEVICE_OPTIONS.some(opt=>opt.id===id)){
+          settings.deviceType = id;
           persistSettings();
+          renderDeviceOptions();
           checkOrientationLock();
         }
       });
     }
-    if(qualityModal){
-      qualitySel = qualityModal;
-      qualityModal.value = settings.quality;
-      qualityModal.addEventListener('change', () => {
-        qualitySel = qualityModal;
-        applyQuality();
-      });
-    }
+    devicePrevBtn?.addEventListener('click', () => cycleDevice(-1));
+    deviceNextBtn?.addEventListener('click', () => cycleDevice(1));
+
+    const qualityOptions = QUALITY_OPTIONS.slice();
+    const renderQualityOptions = () => {
+      if(!qualityTrack) return;
+      if(!qualityOptions.includes(settings.quality)){
+        settings.quality = 'Med';
+      }
+      qualityTrack.innerHTML = qualityOptions.map(opt => `<span data-quality="${opt}" class="${opt===settings.quality? 'active':''}">${escHTML(opt)}</span>`).join('');
+    };
+    const cycleQuality = (dir) => {
+      const idx = Math.max(0, qualityOptions.indexOf(settings.quality));
+      const nextIdx = (idx + dir + qualityOptions.length) % qualityOptions.length;
+      const value = qualityOptions[nextIdx];
+      applyQuality(value);
+      renderQualityOptions();
+    };
+    renderQualityOptions();
+    qualityTrack?.addEventListener('click', e => {
+      const span = e.target.closest('span[data-quality]');
+      if(!span) return;
+      const value = span.dataset.quality;
+      if(value){
+        applyQuality(value);
+        renderQualityOptions();
+      }
+    });
+    qualityPrevBtn?.addEventListener('click', () => cycleQuality(-1));
+    qualityNextBtn?.addEventListener('click', () => cycleQuality(1));
     if(homeButton){
     homeButton.addEventListener('click', () => {
         closeSettings();
@@ -654,8 +713,7 @@
       forgetButton.addEventListener('click', () => {
         localStorage.removeItem(SETTINGS_KEY);
         Object.assign(settings, { ...defaultSettings });
-        qualitySel.value = settings.quality;
-        applyQuality();
+        applyQuality(settings.quality);
         setAudio(settings.audioEnabled, false);
         persistSettings();
         refreshPlayerBadge();
@@ -758,13 +816,12 @@
   // ===== Controls =====
   const muteBtn = document.getElementById('muteBtn');
   const menuBtn = document.getElementById('menuBtn');
-  let qualitySel = null;
   if(menuBtn){ menuBtn.onclick = () => openSettings(); }
 
   // ===== Quality toggle =====
-    const quality = { mul: 1, particleDensity: 1, hallucinationRate: 1 };
-    function applyQuality(){
-      const q = qualitySel?.value || settings.quality || 'Med';
+  const quality = { mul: 1, particleDensity: 1, hallucinationRate: 1 };
+  function applyQuality(newQuality){
+      const q = newQuality || settings.quality || 'Med';
       let mul = 1;
       let particleDensity = 1;
       let hallucinationRate = 1;
@@ -790,7 +847,7 @@
       settings.quality = q;
       persistSettings();
     }
-  applyQuality();
+  applyQuality(settings.quality);
 
   // ===== Audio (procedural) =====
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
