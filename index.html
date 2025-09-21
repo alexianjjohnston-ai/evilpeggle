@@ -326,6 +326,7 @@
             <input type="number" id="adminLevelInput" min="1" max="${TOTAL_LEVELS}" value="${Math.min(TOTAL_LEVELS, Math.max(1, world.level))}" style="width:70px" />
             <button class="btn" id="adminWarp">Go</button>
           </div>
+          <button class="btn" id="adminDisable">Disable Admin Mode</button>
         </div>
       </div>` : '';
     return `
@@ -407,6 +408,7 @@
     const adminClear = modal.querySelector('#adminClearScores');
     const adminWarp = modal.querySelector('#adminWarp');
     const adminLevelInput = modal.querySelector('#adminLevelInput');
+    const adminDisable = modal.querySelector('#adminDisable');
 
     const sanitizeName = val => val.replace(/[^a-z0-9 _!\-]/gi, '').slice(0, 16);
 
@@ -519,6 +521,14 @@
           updateHUD();
           world.aim.ready = true;
         }
+      });
+    }
+    if(adminDisable){
+      adminDisable.addEventListener('click', () => {
+        settings.adminUnlocked = false;
+        persistSettings();
+        showFloat('Admin tools disabled', W/2, H/2, { color:'#f87171', glow:'#dc2626', duration:90, rise:0, scale:1.1 });
+        renderSettingsModal();
       });
     }
   }
