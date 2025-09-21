@@ -853,40 +853,33 @@
     const b = spiral(W*0.75, H*0.45, 10, 14, 70).map(p=>({ ...p, type: (Math.random()<0.25)?'cursed':p.type }));
     return a.concat(b);
   }
-<<<<<<< ours
-<<<<<<< ours
 
   function introSanctum(){
     const arr=[];
-<<<<<<< ours
-<<<<<<< ours
-=======
->>>>>>> theirs
     arr.push(...makeGrid(4,7,200,6,5));
     const cy = 360;
-    arr.push(...ring(W/2, cy, 90, 6, 'cursed'));
-    arr.push(...ring(W/2, cy, 150, 12));
+    arr.push(...ring(W/2, cy, 100, 6, 'cursed'));
+    arr.push(...ring(W/2, cy, 160, 10));
     arr.push(peg(W/2, cy, 'cursed'));
-    arr.push(peg(W/2-190, cy+130, 'normal'));
-    arr.push(peg(W/2+190, cy+130, 'normal'));
+    arr.push(peg(W/2-180, cy+140, 'normal'));
+    arr.push(peg(W/2+180, cy+140, 'normal'));
     return arr;
   }
 
   function crescentGates(){
     const arr=[];
-    for(let i=0;i<8;i++){
-      const x = 120 + i*100;
-      const y = 230 + Math.sin(i*0.6)*40;
+    for(let i=0;i<7;i++){
+      const x = 140 + i*110;
+      const y = 230 + Math.sin(i*0.55)*40;
       arr.push(peg(x,y, i%3===0?'cursed':'normal'));
     }
     for(let i=0;i<6;i++){
-      const x = 170 + i*120;
-      const y = 350 + Math.cos(i*0.55)*50;
+      const x = 180 + i*120;
+      const y = 350 + Math.cos(i*0.6)*46;
       arr.push(peg(x,y, i%2===0?'cursed':'normal'));
-<<<<<<< ours
     }
-    arr.push(...ring(W/2, 500, 110, 8, 'cursed'));
-    arr.push(...ring(W/2, 500, 170, 14));
+    arr.push(...ring(W/2, 520, 120, 8, 'cursed'));
+    arr.push(...ring(W/2, 520, 180, 14));
     return arr;
   }
 
@@ -894,40 +887,39 @@
     const arr=[];
     const cy = 360;
     arr.push(peg(W/2, cy, 'cursed'));
-    for(let angle=0; angle<Math.PI*2; angle+=Math.PI/3){
+    for(let i=0;i<6;i++){
+      const a = i/6*Math.PI*2;
       const inner = 110;
       const outer = 190;
-      arr.push(peg(W/2 + Math.cos(angle)*inner, cy + Math.sin(angle)*inner, 'cursed'));
-      arr.push(peg(W/2 + Math.cos(angle)*outer, cy + Math.sin(angle)*outer));
+      arr.push(peg(W/2 + Math.cos(a)*inner, cy + Math.sin(a)*inner, 'cursed'));
+      arr.push(peg(W/2 + Math.cos(a+Math.PI/6)*outer, cy + Math.sin(a+Math.PI/6)*outer, i%2===0?'normal':'steel'));
     }
-    for(let i=0;i<5;i++){
-      const leftX = W/2 - 220 + i*110;
-      const rightX = W/2 + 220 - i*110;
-      const y = 260 + i*36;
-      arr.push(peg(leftX, y, i%2===0?'cursed':'normal'));
-      arr.push(peg(rightX, y, i%2===1?'cursed':'normal'));
+    for(let i=0;i<4;i++){
+      const y = 240 + i*62;
+      arr.push(peg(W/2-220, y, i%2===0?'cursed':'normal'));
+      arr.push(peg(W/2+220, y+28, i%2===1?'cursed':'normal'));
     }
-    arr.push(...ring(W/2, cy+140, 150, 12));
+    arr.push(...ring(W/2, cy+150, 160, 12));
     return arr;
   }
 
   function whisperSpiral(){
-    const arr = spiral(W/2, H*0.5, 13, 18, 120);
+    const arr = spiral(W/2, H*0.5, 12, 20, 96);
     arr.forEach((p,i)=>{
-      if(i%7===0) p.type='cursed';
+      if(i%6===0) p.type='cursed';
       if(i%13===0) p.type='steel';
     });
-    arr.push(...ring(W/2, H*0.5, 220, 18, 'cursed'));
+    arr.push(...ring(W/2, H*0.5, 220, 16, 'cursed'));
     return arr;
   }
 
   function terracedColumns(){
     const arr=[];
-    arr.push(...columnsLayout(6,6,220,28,4));
+    arr.push(...columnsLayout(6,6,210,26,4));
     for(let i=0;i<5;i++){
-      const y = 260 + i*60;
-      arr.push(peg(180, y, i%2===0?'cursed':'normal'));
-      arr.push(peg(W-180, y+30, i%2===1?'cursed':'normal'));
+      const y = 240 + i*60;
+      arr.push(peg(160, y, i%2===0?'cursed':'normal'));
+      arr.push(peg(W-160, y+30, i%2===1?'cursed':'normal'));
     }
     arr.push(...ring(W/2, 540, 150, 12));
     return arr;
@@ -935,715 +927,233 @@
 
   function tidalRun(){
     const arr=[];
-    arr.push(...waveLayout(5,9,220,48,0.7));
+    arr.push(...waveLayout(5,9,220,48,0.65));
     for(let i=0;i<6;i++){
-      const y = 240 + i*60;
-      arr.push(peg(130, y, i%2===0?'cursed':'steel'));
-      arr.push(peg(W-130, y+30, i%2===1?'cursed':'steel'));
+      const y = 230 + i*60;
+      arr.push(peg(140, y, i%2===0?'cursed':'steel'));
+      arr.push(peg(W-140, y+30, i%2===1?'cursed':'steel'));
     }
     arr.push(...ring(W/2, 560, 120, 10, 'cursed'));
     return arr;
   }
 
   function guardianEye(){
-    const arr=[];
-    arr.push(...targetLayout(W/2, 360));
-    arr.push(...ring(W/2, 360, 200, 18, 'steel'));
+    const arr = [...targetLayout(W/2, 320)];
+    arr.push(...ring(W/2, 320, 200, 14, 'steel'));
     for(let i=0;i<6;i++){
-      arr.push(peg(160 + i*130, 250, i%3===0?'cursed':'normal'));
+      const x = 150 + i*120;
+      arr.push(peg(x, 200 + Math.sin(i*0.5)*30, i%3===0?'cursed':'normal'));
     }
     return arr;
   }
 
   function fractureField(){
-    const arr = scatterLayout(42, 0.24, 230, H-190);
+    const arr = scatterLayout(42, 0.26, 220, H-200);
     for(let i=0;i<6;i++){
-      arr.push(peg(160 + i*110, 250 + i*48, 'cursed'));
-      arr.push(peg(W-160 - i*110, 270 + i*48, i%2===0?'steel':'normal'));
+      arr.push(peg(160 + i*110, 260 + i*40, i%2===0?'cursed':'steel'));
+      arr.push(peg(W-160 - i*110, 260 + i*40, i%3===0?'steel':'normal'));
     }
     return arr;
   }
 
   function twinSpirals(){
-    const swirls = doubleSpiral().map(p=>({ ...p, y: p.y + 40 }));
-    swirls.forEach((p,i)=>{ if(i%9===0) p.type='steel'; });
-    swirls.push(...ring(W/2, 560, 140, 12, 'cursed'));
-    return swirls;
+    const left = spiral(W*0.28, H*0.45, 6.5, 18, 42);
+    const right = spiral(W*0.72, H*0.45, 6.5, 18, 42);
+    left.forEach((p,i)=>{ if(i%5===0) p.type='cursed'; });
+    right.forEach((p,i)=>{ if(i%5===0) p.type='cursed'; if(i%11===0) p.type='steel'; });
+    return [...left, ...right, ...ring(W/2, 560, 140, 12, 'cursed')];
   }
 
-  function ramparts(){
+  function bulwarkHall(){
+    const arr=[];
+    arr.push(...columnsLayout(5,7,200,32,3));
+    for(let i=0;i<6;i++){
+      const x = 140 + i*120;
+      arr.push(peg(x, 180, i%2===0?'cursed':'normal'));
+      arr.push(peg(x, 520, i%3===0?'steel':'normal'));
+    }
+    arr.push(...ring(W/2, 360, 180, 14, 'steel'));
+    return arr;
+  }
+
+  function emberBloom(){
+    const arr=[];
+    const cy = 340;
+    arr.push(...ring(W/2, cy, 80, 6, 'cursed'));
+    arr.push(...ring(W/2, cy, 140, 10));
+    const outer = ring(W/2, cy, 210, 14);
+    outer.forEach((p,i)=>{
+      if(i%3===0) p.type='cursed';
+      if(i%5===0) p.type='steel';
+    });
+    arr.push(...outer);
+    for(let i=0;i<6;i++){
+      const a = -Math.PI/2 + i*(Math.PI*2/6);
+      arr.push(peg(W/2 + Math.cos(a)*250, cy + Math.sin(a)*120, i%2===0?'steel':'normal'));
+    }
+    return arr;
+  }
+
+  function glassGarden(){
+    const arr=[];
+    arr.push(...waveLayout(4,8,200,40,0.5));
+    for(let i=0;i<5;i++){
+      const x = 180 + i*160;
+      arr.push(peg(x, 260, i%2===0?'cursed':'normal'));
+      arr.push(peg(x, 420, i%3===0?'steel':'normal'));
+    }
+    const petals = ring(W/2, 560, 150, 12);
+    petals.forEach((p,i)=>{ if(i%4===0) p.type='cursed'; });
+    arr.push(...petals);
+    return arr;
+  }
+
+  function obsidianCrown(){
+    const arr = [...targetLayout(W/2, 280)];
+    const guard = ring(W/2, 280, 220, 16, 'cursed');
+    arr.push(...guard);
+    for(let i=0;i<6;i++){
+      arr.push(peg(160 + i*120, 520, i%2===0?'steel':'cursed'));
+    }
+    return arr;
+  }
+
+  function leviathanRise(){
     const arr=[];
     for(let r=0;r<6;r++){
-      const y = 230 + r*62;
-      for(let c=0;c<5;c++){
-        const x = 180 + c*120;
-        const type = (c===2 || r===2)?'cursed':'normal';
-        arr.push(peg(x,y,type));
-      }
-    }
-    for(let i=0;i<4;i++){
-      const x = 200 + i*160;
-      arr.push(peg(x, 210, 'steel'));
-      arr.push(peg(x, 590, 'steel'));
-    }
-    return arr;
-  }
-
-  function canyonRefuge(){
-    const arr=[];
-    arr.push(...columnsLayout(5,6,230,28,4));
-    for(let i=0;i<7;i++){
-      const x = W/2 + (i-3)*70;
-      arr.push(peg(x, 280 + Math.sin(i*0.7)*50, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 450 + Math.cos(i*0.6)*42, i%4===1?'cursed':'normal'));
-    }
-    return arr;
-  }
-
-  function blossomReborn(){
-    const arr=[];
-    const cy = 360;
-    arr.push(...ring(W/2, cy, 70, 6, 'cursed'));
-    arr.push(...ring(W/2, cy, 130, 10));
-    arr.push(...ring(W/2, cy, 190, 14, 'cursed'));
-    for(let i=0;i<6;i++){
-      const a = i/6*Math.PI*2;
-      arr.push(peg(W/2 + Math.cos(a)*240, cy + Math.sin(a)*120, i%2===0?'normal':'steel'));
-=======
-    arr.push(...makeGrid(3,6,220,6,6));
-    arr.push(peg(W/2, 320, 'cursed'));
-    for(let i=0;i<4;i++){
-      const x = W/2 + (i-1.5)*90;
-      arr.push(peg(x, 420 + Math.sin(i*0.9)*18, i%2===0?'cursed':'normal'));
-=======
-=======
->>>>>>> theirs
-  function ladderLayout(steps=5, offsetY=140){
-    const arr=[]; const gapX = W/(steps+3);
-    for(let i=0;i<steps;i++){
-      const y = offsetY + i*60;
-      for(let j=0;j<5;j++) arr.push(peg(120 + j*110, y, (j===2||i===Math.floor(steps/2))?'cursed':'normal'));
-      arr.push(peg(120 + i*gapX, y-30, 'steel'));
-      arr.push(peg(W-120 - i*gapX, y+30, 'steel'));
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
-    }
-    return arr;
-  }
-  function canyonLayout(){
-    const arr=[];
-<<<<<<< ours
-<<<<<<< ours
-    for(let i=0;i<6;i++){
-      const t = -0.9 + i*(1.8/5);
-      const x = W/2 + Math.cos(t)*190;
-      const y = 280 + Math.sin(t)*90;
-      arr.push(peg(x,y, i%2===0?'cursed':'normal'));
-    }
-    for(let i=0;i<6;i++){
-      const t = -1 + i*(2/5);
-      const x = W/2 + Math.cos(t)*240;
-      const y = 420 + Math.sin(t)*110;
-      arr.push(peg(x,y, i%3===0?'cursed':'normal'));
-    }
-    for(let i=0;i<5;i++){
-      const x = 160 + i*160;
-      arr.push(peg(x, 360, i%2===1?'cursed':'normal'));
-    }
-    const moat = ring(W/2, 560, 140, 12);
-    moat.forEach((p,i)=>{ if(i%3===1) p.type='cursed'; });
-    arr.push(...moat);
-=======
-    }
-    arr.push(...ring(W/2, 500, 110, 8, 'cursed'));
-    arr.push(...ring(W/2, 500, 170, 14));
->>>>>>> theirs
-=======
-    arr.push(...columnsLayout(5,6,130,18,4));
-    for(let i=0;i<8;i++) arr.push(peg(W/2 + (i-3.5)*40, 160 + Math.sin(i*0.6)*30, i%2? 'cursed':'normal'));
-    for(let i=0;i<6;i++) arr.push(peg(W/2 + (i-2.5)*50, 320 + Math.cos(i*0.5)*28, i%3===0?'cursed':'normal'));
->>>>>>> theirs
-=======
-    arr.push(...columnsLayout(5,6,130,18,4));
-    for(let i=0;i<8;i++) arr.push(peg(W/2 + (i-3.5)*40, 160 + Math.sin(i*0.6)*30, i%2? 'cursed':'normal'));
-    for(let i=0;i<6;i++) arr.push(peg(W/2 + (i-2.5)*50, 320 + Math.cos(i*0.5)*28, i%3===0?'cursed':'normal'));
->>>>>>> theirs
-    return arr;
-  }
-  function blossomLayout(){
-    const arr=[];
-<<<<<<< ours
-<<<<<<< ours
-    const cy = 360;
-    arr.push(peg(W/2, cy, 'cursed'));
-<<<<<<< ours
-    for(let i=0;i<5;i++){
-      const a = -Math.PI/2 + i*(Math.PI*2/5);
-      arr.push(peg(W/2 + Math.cos(a)*110, cy + Math.sin(a)*110, 'cursed'));
-      arr.push(peg(W/2 + Math.cos(a+Math.PI/5)*180, cy + Math.sin(a+Math.PI/5)*180));
-    }
-    for(let i=0;i<4;i++){
-      const leftX = W/2 - 220 + i*110;
-      const rightX = W/2 + 220 - i*110;
-      const y = 260 + i*38;
-      arr.push(peg(leftX, y, i%2===0?'cursed':'normal'));
-      arr.push(peg(rightX, y, i%2===1?'cursed':'normal'));
-    }
-    const ringA = ring(W/2, cy+140, 150, 12);
-    ringA.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
-    arr.push(...ringA);
-=======
-    arr.push(...targetLayout(W/2, 220));
-    arr.push(...ring(W/2, 220, 40, 5, 'cursed'));
-    arr.push(...ring(W/2, 220, 210, 24));
->>>>>>> theirs
-    return arr;
-  }
-  function zigzagLayout(){
-    const arr=[]; const rows=8; const cols=8; const gapX=W/(cols+1); const gapY=48;
-    for(let r=0;r<rows;r++){
-      for(let c=0;c<cols;c++){
-        const x = gapX*(c+1);
-        const y = 120 + r*gapY + (r%2?20:-20);
-        if((r+c)%2===0) arr.push(peg(x,y,'cursed')); else arr.push(peg(x,y));
-      }
-    }
-<<<<<<< ours
-    arr.push(peg(150, 260, 'steel'));
-    arr.push(peg(W-150, 300, 'steel'));
-    const base = ring(W/2, 560, 130, 12);
-    base.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
-    arr.push(...base);
-=======
-    for(let angle=0; angle<Math.PI*2; angle+=Math.PI/3){
-      const inner = 110;
-      const outer = 190;
-      arr.push(peg(W/2 + Math.cos(angle)*inner, cy + Math.sin(angle)*inner, 'cursed'));
-      arr.push(peg(W/2 + Math.cos(angle)*outer, cy + Math.sin(angle)*outer));
-    }
-    for(let i=0;i<5;i++){
-      const leftX = W/2 - 220 + i*110;
-      const rightX = W/2 + 220 - i*110;
-      const y = 260 + i*36;
-      arr.push(peg(leftX, y, i%2===0?'cursed':'normal'));
-      arr.push(peg(rightX, y, i%2===1?'cursed':'normal'));
-    }
-    arr.push(...ring(W/2, cy+140, 150, 12));
-    return arr;
-  }
-
-  function whisperSpiral(){
-    const arr = spiral(W/2, H*0.5, 13, 18, 120);
-    arr.forEach((p,i)=>{
-      if(i%7===0) p.type='cursed';
-      if(i%13===0) p.type='steel';
-    });
-    arr.push(...ring(W/2, H*0.5, 220, 18, 'cursed'));
-    return arr;
-  }
-
-  function terracedColumns(){
-    const arr=[];
-    arr.push(...columnsLayout(6,6,220,28,4));
-    for(let i=0;i<5;i++){
-      const y = 260 + i*60;
-      arr.push(peg(180, y, i%2===0?'cursed':'normal'));
-      arr.push(peg(W-180, y+30, i%2===1?'cursed':'normal'));
-    }
-    arr.push(...ring(W/2, 540, 150, 12));
->>>>>>> theirs
-=======
->>>>>>> theirs
-=======
-    arr.push(...targetLayout(W/2, 220));
-    arr.push(...ring(W/2, 220, 40, 5, 'cursed'));
-    arr.push(...ring(W/2, 220, 210, 24));
-    return arr;
-  }
-  function zigzagLayout(){
-    const arr=[]; const rows=8; const cols=8; const gapX=W/(cols+1); const gapY=48;
-    for(let r=0;r<rows;r++){
-      for(let c=0;c<cols;c++){
-        const x = gapX*(c+1);
-        const y = 120 + r*gapY + (r%2?20:-20);
-        if((r+c)%2===0) arr.push(peg(x,y,'cursed')); else arr.push(peg(x,y));
-      }
-    }
->>>>>>> theirs
-    return arr;
-  }
-  function flameLayout(){
-    const arr=[];
-<<<<<<< ours
-<<<<<<< ours
-<<<<<<< ours
-    arr.push(...waveLayout(5,8,230,42,0.65));
-    for(let i=0;i<5;i++){
-      const y = 260 + i*60;
-      arr.push(peg(150, y, i%2===0?'cursed':'steel'));
-      arr.push(peg(W-150, y+30, i%2===1?'cursed':'steel'));
->>>>>>> theirs
-    }
-    const basin = ring(W/2, 560, 120, 10);
-    basin.forEach((p,i)=>{ if(i%2===0) p.type='cursed'; });
-    arr.push(...basin);
-    return arr;
-  }
-
-<<<<<<< ours
-  function ziggurat(){
-    const arr=[];
-    const rows=7;
-    for(let r=0;r<rows;r++){
-      const count = rows + 2 - r;
-      const y = 230 + r*54;
-      const startX = W/2 - (count-1)*50;
+      const count = 6 + Math.max(0, r-1);
+      const y = 220 + r*60;
+      const startX = W/2 - (count-1)*60;
       for(let c=0;c<count;c++){
-        const x = startX + c*100;
-        const boundary = (c===0 || c===count-1);
-        const type = boundary || (r%2===0 && c%2===0) ? 'cursed' : 'normal';
+        const x = startX + c*120;
+        const edge = (c===0 || c===count-1);
+        const type = edge || (r%2===0 && c%2===0) ? 'cursed' : 'normal';
         arr.push(peg(x,y,type));
       }
     }
-    for(let i=0;i<5;i++) arr.push(peg(180 + i*160, 200, 'steel'));
+    arr.push(...ring(W/2, 560, 130, 12, 'cursed'));
     return arr;
   }
 
-  function pyre(){
+  function voidChorus(){
     const arr=[];
-    arr.push(...waveLayout(5,9,230,54,0.75));
-    for(let i=0;i<6;i++){
-      const y = 260 + i*58;
-      arr.push(peg(W/2, y, i%2===0?'cursed':'steel'));
-=======
-    arr.push(...waveLayout(4,9,140,46,0.7));
-    arr.push(...targetLayout(W/2, H*0.68));
-    return arr;
-  }
-  function shieldLayout(){
-    const arr=[];
-    arr.push(...ring(W/2, H*0.45, 120, 14, 'cursed'));
-    arr.push(...ring(W/2, H*0.45, 160, 18));
     for(let i=0;i<8;i++){
-      const x = 160 + i*100;
-      arr.push(peg(x, 140 + Math.sin(i*0.5)*30, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 360 + Math.cos(i*0.4)*26, i%4===0?'steel':'normal'));
->>>>>>> theirs
+      const x = 140 + i*100;
+      arr.push(peg(x, 200 + Math.sin(i*0.4)*50, i%3===0?'cursed':'normal'));
+      arr.push(peg(x, 360 + Math.cos(i*0.5)*40, i%4===0?'steel':'normal'));
+      arr.push(peg(x, 520 + Math.sin(i*0.6)*30, i%2===0?'cursed':'normal'));
     }
-    arr.push(...ring(W/2, 580, 140, 12, 'cursed'));
-    return arr;
-  }
-<<<<<<< ours
-
-  function bulwark(){
-    const arr=[];
-    const cy = 380;
-    arr.push(...ring(W/2, cy, 110, 12, 'cursed'));
-    arr.push(...ring(W/2, cy, 170, 16));
-    arr.push(...ring(W/2, cy, 230, 20, 'steel'));
-    for(let i=0;i<8;i++){
-      const x = 150 + i*100;
-      arr.push(peg(x, 270 + Math.sin(i*0.4)*48, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 470 + Math.cos(i*0.4)*40, i%4===0?'steel':'normal'));
-=======
-    arr.push(...waveLayout(5,9,220,48,0.7));
-    for(let i=0;i<6;i++){
-      const y = 240 + i*60;
-      arr.push(peg(130, y, i%2===0?'cursed':'steel'));
-      arr.push(peg(W-130, y+30, i%2===1?'cursed':'steel'));
-    }
-    arr.push(...ring(W/2, 560, 120, 10, 'cursed'));
+    arr.push(...ring(W/2, 360, 200, 18, 'cursed'));
     return arr;
   }
 
-  function guardianEye(){
+  function labyrinthCage(){
     const arr=[];
-    arr.push(...targetLayout(W/2, 360));
-    arr.push(...ring(W/2, 360, 200, 18, 'steel'));
-    for(let i=0;i<6;i++){
-      arr.push(peg(160 + i*130, 250, i%3===0?'cursed':'normal'));
-    }
-    return arr;
-  }
-
-  function fractureField(){
-    const arr = scatterLayout(42, 0.24, 230, H-190);
-    for(let i=0;i<6;i++){
-      arr.push(peg(160 + i*110, 250 + i*48, 'cursed'));
-      arr.push(peg(W-160 - i*110, 270 + i*48, i%2===0?'steel':'normal'));
-    }
-    return arr;
-  }
-
-  function twinSpirals(){
-    const swirls = doubleSpiral().map(p=>({ ...p, y: p.y + 40 }));
-    swirls.forEach((p,i)=>{ if(i%9===0) p.type='steel'; });
-    swirls.push(...ring(W/2, 560, 140, 12, 'cursed'));
-    return swirls;
-=======
-  function vortexLayout(){
-    const arr=[];
-    arr.push(...spiral(W/2, H/2, 14, 18, 130));
-    arr.forEach((p,i)=>{ if(i%5===0) p.type='cursed'; });
-    arr.push(...ring(W/2, H/2, 210, 24, 'steel'));
-    return arr;
-  }
-  function diamondsLayout(){
-    const arr=[];
-    const centers=[[W*0.25,200],[W*0.5,140],[W*0.75,200],[W*0.25,320],[W*0.5,380],[W*0.75,320]];
-    centers.forEach(([cx,cy],idx)=>{
-      const offsets=[[0,-40],[40,0],[0,40],[-40,0]];
-      offsets.forEach((off,i)=>{ arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal')); });
-      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
-    });
-    return arr;
->>>>>>> theirs
-  }
-  function arcGauntlet(){
-    const arr=[];
-<<<<<<< ours
-    for(let r=0;r<6;r++){
-      const y = 230 + r*62;
-      for(let c=0;c<5;c++){
-        const x = 180 + c*120;
-        const type = (c===2 || r===2)?'cursed':'normal';
+    const rows=5, cols=9;
+    const gapX=W/(cols+1); const gapY=70;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x = gapX*(c+1);
+        const y = 200 + r*gapY;
+        const border = (r===0||r===rows-1||c===0||c===cols-1);
+        const type = border ? ((r+c)%2===0? 'cursed':'normal') : ((r+c)%3===0? 'cursed':'normal');
         arr.push(peg(x,y,type));
       }
     }
-    for(let i=0;i<4;i++){
-      const x = 200 + i*160;
-      arr.push(peg(x, 210, 'steel'));
-      arr.push(peg(x, 590, 'steel'));
-    }
-    return arr;
-  }
-
-  function canyonRefuge(){
-    const arr=[];
-    arr.push(...columnsLayout(5,6,230,28,4));
-    for(let i=0;i<7;i++){
-      const x = W/2 + (i-3)*70;
-      arr.push(peg(x, 280 + Math.sin(i*0.7)*50, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 450 + Math.cos(i*0.6)*42, i%4===1?'cursed':'normal'));
-    }
-=======
-    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 150 + Math.sin(i*0.6)*40, i%3===0?'cursed':'normal'));
-    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 320 + Math.cos(i*0.6)*40, i%3===1?'cursed':'normal'));
-    arr.push(...ring(W/2, 235, 180, 24, 'steel'));
-    return arr;
-  }
-  function meteorLayout(){
-    const arr = scatterLayout(52, 0.22, 100, H-120);
-    for(let i=0;i<6;i++) arr.push(peg(120 + i*140, 180, 'steel'));
->>>>>>> theirs
-    return arr;
-  }
-  function pillarsLayout(){
-    const arr=[];
-<<<<<<< ours
-    const cy = 360;
-    arr.push(...ring(W/2, cy, 70, 6, 'cursed'));
-    arr.push(...ring(W/2, cy, 130, 10));
-    arr.push(...ring(W/2, cy, 190, 14, 'cursed'));
     for(let i=0;i<6;i++){
-      const a = i/6*Math.PI*2;
-      arr.push(peg(W/2 + Math.cos(a)*240, cy + Math.sin(a)*120, i%2===0?'normal':'steel'));
->>>>>>> theirs
+      arr.push(peg(140 + i*120, 340 + Math.sin(i)*50, i%2===0?'steel':'normal'));
     }
-    return arr;
-  }
-
-<<<<<<< ours
-  function maelstrom(){
-    const arr = spiral(W/2, H*0.55, 15, 18, 140);
-    arr.forEach((p,i)=>{
-      if(i%6===0) p.type='cursed';
-      if(i%9===0) p.type='steel';
-    });
-    arr.push(...ring(W/2, H*0.55, 210, 20, 'cursed'));
-    arr.push(...ring(W/2, H*0.55, 240, 24, 'steel'));
-    return arr;
-  }
-
-  function jewelVault(){
-    const arr=[];
-    const centers=[
-      [W*0.28, 290], [W*0.5, 240], [W*0.72, 290],
-      [W*0.28, 430], [W*0.5, 480], [W*0.72, 430]
-    ];
-    centers.forEach(([cx,cy],idx)=>{
-      const offsets=[[0,-50],[50,0],[0,50],[-50,0]];
-      offsets.forEach((off,i)=>{
-        arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal'));
-      });
-      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
-    });
-    arr.push(...ring(W/2, 580, 140, 12, 'steel'));
-    return arr;
-  }
-
-  function arcSanctum(){
-    const arr=[];
-    for(let i=0;i<9;i++){
-      const x = 120 + i*90;
-      arr.push(peg(x, 250 + Math.sin(i*0.55)*40, i%3===0?'cursed':'normal'));
-    }
-    for(let i=0;i<9;i++){
-      const x = 120 + i*90;
-      arr.push(peg(x, 390 + Math.cos(i*0.55)*42, i%3===1?'cursed':'normal'));
-    }
-    arr.push(...ring(W/2, 560, 120, 12, 'cursed'));
-    arr.push(...ring(W/2, 560, 180, 18, 'steel'));
+    arr.push(...ring(W/2, 560, 150, 12));
     return arr;
   }
 
   function impactField(){
-    const arr = scatterLayout(48, 0.26, 240, H-200);
-    for(let i=0;i<6;i++) arr.push(peg(160 + i*120, 280, 'steel'));
+    const arr = scatterLayout(36, 0.32, 200, H-220);
     for(let i=0;i<5;i++){
-      const x = 200 + i*140;
-      arr.push(peg(x, 540 + Math.sin(i*0.6)*40, i%2===0?'cursed':'normal'));
+      const x = 180 + i*140;
+      arr.push(peg(x, 240, i%2===0?'cursed':'normal'));
+      arr.push(peg(x, 500, i%3===0?'steel':'cursed'));
+    }
+    const core = ring(W/2, 360, 120, 10, 'cursed');
+    core.forEach((p,i)=>{ if(i%3===0) p.type='steel'; });
+    arr.push(...core);
+    return arr;
+  }
+
+  function eclipseRun(){
+    const arr=[];
+    arr.push(...waveLayout(5,10,210,52,0.8));
+    arr.push(...ring(W/2, 280, 80, 6, 'cursed'));
+    const halo = ring(W/2, 280, 200, 14);
+    halo.forEach((p,i)=>{ if(i%4===0) p.type='cursed'; });
+    arr.push(...halo);
+    for(let i=0;i<6;i++){
+      arr.push(peg(160 + i*120, 520 + Math.cos(i*0.6)*36, i%2===0?'steel':'normal'));
     }
     return arr;
   }
 
-  function grandFinale(){
-    const arr=[];
-    arr.push(...targetLayout(W/2, 360));
-    const swirl = doubleSpiral().map(p=>({ ...p, y: p.y + 60 }));
-    arr.push(...swirl);
-    arr.push(...scatterLayout(22, 0.3, 260, H-200));
-    arr.push(...ring(W/2, 560, 160, 18, 'steel'));
-=======
-  function guardianEye(){
-=======
-    arr.push(...waveLayout(4,9,140,46,0.7));
-    arr.push(...targetLayout(W/2, H*0.68));
-    return arr;
-  }
-  function shieldLayout(){
->>>>>>> theirs
-    const arr=[];
-    arr.push(...ring(W/2, H*0.45, 120, 14, 'cursed'));
-    arr.push(...ring(W/2, H*0.45, 160, 18));
-    for(let i=0;i<8;i++){
-      const x = 160 + i*100;
-      arr.push(peg(x, 140 + Math.sin(i*0.5)*30, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 360 + Math.cos(i*0.4)*26, i%4===0?'steel':'normal'));
+  function meteorFall(){
+    const arr = scatterLayout(38, 0.34, 200, H-220);
+    for(let i=0;i<6;i++){
+      arr.push(peg(140 + i*110, 220 + i*60, i%2===0?'cursed':'steel'));
     }
+    for(let i=0;i<5;i++){
+      arr.push(peg(W-140 - i*110, 260 + i*60, i%3===0?'cursed':'normal'));
+    }
+    arr.push(...ring(W/2, 580, 140, 14, 'cursed'));
     return arr;
   }
-  function vortexLayout(){
+
+  function finaleCataclysm(){
     const arr=[];
-    arr.push(...spiral(W/2, H/2, 14, 18, 130));
-    arr.forEach((p,i)=>{ if(i%5===0) p.type='cursed'; });
-    arr.push(...ring(W/2, H/2, 210, 24, 'steel'));
-    return arr;
-  }
-  function diamondsLayout(){
-    const arr=[];
-    const centers=[[W*0.25,200],[W*0.5,140],[W*0.75,200],[W*0.25,320],[W*0.5,380],[W*0.75,320]];
-    centers.forEach(([cx,cy],idx)=>{
-      const offsets=[[0,-40],[40,0],[0,40],[-40,0]];
-      offsets.forEach((off,i)=>{ arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal')); });
-      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
+    arr.push(...ring(W/2, 320, 90, 8, 'cursed'));
+    const mid = ring(W/2, 320, 160, 14);
+    mid.forEach((p,i)=>{
+      if(i%4===0) p.type='cursed';
+      if(i%6===0) p.type='steel';
     });
-    return arr;
-  }
-  function arcGauntlet(){
-    const arr=[];
-    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 150 + Math.sin(i*0.6)*40, i%3===0?'cursed':'normal'));
-    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 320 + Math.cos(i*0.6)*40, i%3===1?'cursed':'normal'));
-    arr.push(...ring(W/2, 235, 180, 24, 'steel'));
-    return arr;
-  }
-  function meteorLayout(){
-    const arr = scatterLayout(52, 0.22, 100, H-120);
-    for(let i=0;i<6;i++) arr.push(peg(120 + i*140, 180, 'steel'));
-    return arr;
-  }
-  function pillarsLayout(){
-    const arr=[];
-    arr.push(...columnsLayout(7,7,120,22,4));
-    arr.push(...ring(W/2, 380, 120, 12, 'cursed'));
-    return arr;
-  }
-=======
-    arr.push(...columnsLayout(7,7,120,22,4));
-    arr.push(...ring(W/2, 380, 120, 12, 'cursed'));
-    return arr;
-  }
->>>>>>> theirs
-  function cascadeLayout(){
-    const arr=[];
-    for(let r=0;r<6;r++){
-      for(let c=0;c<6;c++){
-        const x = 160 + c*110 + (r%2?55:0);
-        const y = 140 + r*60;
-        arr.push(peg(x,y, (r===c||c===5-r)?'cursed':'normal'));
+    arr.push(...mid);
+    const outer = ring(W/2, 320, 230, 18);
+    outer.forEach((p,i)=>{ if(i%3===0) p.type='steel'; });
+    arr.push(...outer);
+    const spokes = 8;
+    for(let i=0;i<spokes;i++){
+      const a = i/spokes*Math.PI*2;
+      for(let k=1;k<=4;k++){
+        const radius = 60 + k*60;
+        const type = k===4 ? 'steel' : (k%2===0? 'cursed':'normal');
+        arr.push(peg(W/2 + Math.cos(a)*radius, 320 + Math.sin(a)*radius, type));
       }
     }
-    return arr;
-  }
-  function finaleLayout(){
-    const arr=[];
-<<<<<<< ours
-<<<<<<< ours
-    arr.push(...waveLayout(5,8,240,48,0.75));
     for(let i=0;i<6;i++){
-      const y = 260 + i*56;
-      arr.push(peg(W/2, y, i%2===0?'cursed':'steel'));
-      arr.push(peg(W/2-150, y+18, i%3===0?'cursed':'normal'));
-      arr.push(peg(W/2+150, y-18, i%3===1?'cursed':'normal'));
+      arr.push(peg(160 + i*120, 540 + Math.sin(i*0.6)*50, i%2===0?'cursed':'steel'));
     }
-    const crown = ring(W/2, 620, 150, 12);
-    crown.forEach((p,i)=>{ if(i%3===0) p.type='cursed'; });
-    arr.push(...crown);
->>>>>>> theirs
-=======
-  function ziggurat(){
-    const arr=[];
-    const rows=7;
-    for(let r=0;r<rows;r++){
-      const count = rows + 2 - r;
-      const y = 230 + r*54;
-      const startX = W/2 - (count-1)*50;
-      for(let c=0;c<count;c++){
-        const x = startX + c*100;
-        const boundary = (c===0 || c===count-1);
-        const type = boundary || (r%2===0 && c%2===0) ? 'cursed' : 'normal';
-        arr.push(peg(x,y,type));
-      }
-    }
-    for(let i=0;i<5;i++) arr.push(peg(180 + i*160, 200, 'steel'));
+    arr.push(...scatterLayout(24, 0.4, 160, H-200));
     return arr;
   }
 
-  function pyre(){
-    const arr=[];
-    arr.push(...waveLayout(5,9,230,54,0.75));
-    for(let i=0;i<6;i++){
-      const y = 260 + i*58;
-      arr.push(peg(W/2, y, i%2===0?'cursed':'steel'));
-    }
-    arr.push(...ring(W/2, 580, 140, 12, 'cursed'));
-    return arr;
-  }
-
-  function bulwark(){
-    const arr=[];
-    const cy = 380;
-    arr.push(...ring(W/2, cy, 110, 12, 'cursed'));
-    arr.push(...ring(W/2, cy, 170, 16));
-    arr.push(...ring(W/2, cy, 230, 20, 'steel'));
-    for(let i=0;i<8;i++){
-      const x = 150 + i*100;
-      arr.push(peg(x, 270 + Math.sin(i*0.4)*48, i%3===0?'cursed':'normal'));
-      arr.push(peg(x, 470 + Math.cos(i*0.4)*40, i%4===0?'steel':'normal'));
-    }
-    return arr;
-  }
-
-  function maelstrom(){
-    const arr = spiral(W/2, H*0.55, 15, 18, 140);
-    arr.forEach((p,i)=>{
-      if(i%6===0) p.type='cursed';
-      if(i%9===0) p.type='steel';
-    });
-    arr.push(...ring(W/2, H*0.55, 210, 20, 'cursed'));
-    arr.push(...ring(W/2, H*0.55, 240, 24, 'steel'));
-    return arr;
-  }
-
-  function jewelVault(){
-    const arr=[];
-    const centers=[
-      [W*0.28, 290], [W*0.5, 240], [W*0.72, 290],
-      [W*0.28, 430], [W*0.5, 480], [W*0.72, 430]
-    ];
-    centers.forEach(([cx,cy],idx)=>{
-      const offsets=[[0,-50],[50,0],[0,50],[-50,0]];
-      offsets.forEach((off,i)=>{
-        arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal'));
-      });
-      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
-    });
-    arr.push(...ring(W/2, 580, 140, 12, 'steel'));
-    return arr;
-  }
-
-  function arcSanctum(){
-    const arr=[];
-    for(let i=0;i<9;i++){
-      const x = 120 + i*90;
-      arr.push(peg(x, 250 + Math.sin(i*0.55)*40, i%3===0?'cursed':'normal'));
-    }
-    for(let i=0;i<9;i++){
-      const x = 120 + i*90;
-      arr.push(peg(x, 390 + Math.cos(i*0.55)*42, i%3===1?'cursed':'normal'));
-    }
-    arr.push(...ring(W/2, 560, 120, 12, 'cursed'));
-    arr.push(...ring(W/2, 560, 180, 18, 'steel'));
-    return arr;
-  }
-
-  function impactField(){
-    const arr = scatterLayout(48, 0.26, 240, H-200);
-    for(let i=0;i<6;i++) arr.push(peg(160 + i*120, 280, 'steel'));
-    for(let i=0;i<5;i++){
-      const x = 200 + i*140;
-      arr.push(peg(x, 540 + Math.sin(i*0.6)*40, i%2===0?'cursed':'normal'));
-    }
-    return arr;
-  }
-
-  function grandFinale(){
-    const arr=[];
-    arr.push(...targetLayout(W/2, 360));
-    const swirl = doubleSpiral().map(p=>({ ...p, y: p.y + 60 }));
-    arr.push(...swirl);
-    arr.push(...scatterLayout(22, 0.3, 260, H-200));
-    arr.push(...ring(W/2, 560, 160, 18, 'steel'));
->>>>>>> theirs
-=======
-    arr.push(...targetLayout(W/2, 220));
-    arr.push(...doubleSpiral());
-    arr.push(...scatterLayout(20, 0.3, 120, H-140));
->>>>>>> theirs
-    return arr;
-  }
-
-=======
-    arr.push(...targetLayout(W/2, 220));
-    arr.push(...doubleSpiral());
-    arr.push(...scatterLayout(20, 0.3, 120, H-140));
-    return arr;
-  }
-
->>>>>>> theirs
   const LEVELS = [
-    () => makeGrid(5,9,140,8,6),
-    () => [...makeGrid(4,8,150,5,4), ...ring(W/2, 210, 150, 16, 'cursed')],
-    () => [...mix(makeGrid(6,10,120,5,3), 10), ...ring(W/2, 320, 100, 10)],
-    () => spiral(W/2, H/2, 12, 20, 120),
-    () => columnsLayout(6,6,130,18,3),
-    () => waveLayout(5,9,130,34,0.55),
-    () => targetLayout(W/2, 220),
-    () => scatterLayout(48, 0.28, 120, H-140),
-    () => doubleSpiral(),
-    () => ladderLayout(5,140),
-    () => canyonLayout(),
-    () => blossomLayout(),
-    () => zigzagLayout(),
-    () => flameLayout(),
-    () => shieldLayout(),
-    () => vortexLayout(),
-    () => diamondsLayout(),
-    () => arcGauntlet(),
-    () => meteorLayout(),
-    () => finaleLayout(),
+    introSanctum,
+    crescentGates,
+    ritualStar,
+    whisperSpiral,
+    terracedColumns,
+    tidalRun,
+    guardianEye,
+    fractureField,
+    twinSpirals,
+    bulwarkHall,
+    emberBloom,
+    glassGarden,
+    obsidianCrown,
+    leviathanRise,
+    voidChorus,
+    labyrinthCage,
+    impactField,
+    eclipseRun,
+    meteorFall,
+    finaleCataclysm,
   ];
   const TOTAL_LEVELS = LEVELS.length;
 

@@ -1,0 +1,24 @@
+{
+  "name": "evilpeggle",
+  "version": "1.0.0",
+  "description": "A cursed, horror-themed spin on Peggle — contained entirely in a single HTML file.   Playable directly in the browser, with CRT distortion, procedural audio, whispers, and jumpscares.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexianjjohnston-ai/evilpeggle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/alexianjjohnston-ai/evilpeggle/issues"
+  },
+  "homepage": "https://github.com/alexianjjohnston-ai/evilpeggle#readme",
+  "dependencies": {
+    "puppeteer": "^24.22.0"
+  }
+}
