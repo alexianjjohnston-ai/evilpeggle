@@ -22,10 +22,10 @@
     #menuBtn.btn-menu .icon{font-size:16px;color:#f87171;text-shadow:0 0 12px rgba(248,113,113,.55)}
     #menuBtn.btn-menu .label{font-size:12px}
     #menuBtn.btn-menu:hover{background:linear-gradient(135deg, rgba(54,14,22,.94), rgba(18,9,14,.98));}
-    main{display:grid;place-items:center;padding:0.5rem clamp(0.5rem,2vw,1rem)}
+    main{display:flex;align-items:center;justify-content:center;padding:0.35rem clamp(0.35rem,2vw,1rem)}
 
     /* CRT look */
-    .stage{position:relative;display:flex;justify-content:center;align-items:center;padding:0 12px;width:100%;max-width:960px;margin:0 auto;overflow:hidden}
+    .stage{position:relative;display:flex;justify-content:center;align-items:center;padding:0;width:100%;max-width:960px;margin:0 auto;overflow:hidden}
     .crt{position:relative;width:100%;max-width:960px;aspect-ratio:4/3;margin:0 auto}
     .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 200px rgba(0,0,0,.82)}
@@ -162,6 +162,17 @@
     footer .footer-note{letter-spacing:.12em;text-transform:uppercase}
 
     @keyframes flash{0%,60%{opacity:.25}70%{opacity:.75}100%{opacity:.25}}
+
+    @media (max-width: 768px){
+      header{padding:.45rem .85rem;gap:.6rem}
+      header h1{font-size:11px;letter-spacing:.22em}
+      #menuBtn.btn-menu{padding:.45rem .8rem;letter-spacing:.12em}
+      main{padding:0.2rem 0.35rem}
+      footer{padding:.45rem 1rem;font-size:11px}
+      .settings-panel{gap:22px;padding:28px}
+      .settings-panel select{width:130px;max-width:130px}
+      .slider-control{min-width:140px}
+    }
   </style>
 </head>
 <body>
@@ -946,52 +957,49 @@
   </svg>`);
   // Bucket monster (open/closed)
   Spr.bucketOpen = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='160' height='60' viewBox='0 0 160 60'>
+  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='58' viewBox='0 0 150 58'>
     <defs>
-      <linearGradient id='trapSkin' x1='0' y1='0' x2='0' y2='1'>
-        <stop offset='0%' stop-color='#1b0b12'/>
-        <stop offset='100%' stop-color='#040205'/>
-      </linearGradient>
-      <radialGradient id='trapGlow' cx='50%' cy='40%' r='60%'>
-        <stop offset='0%' stop-color='rgba(248,113,113,.85)'/>
+      <radialGradient id='trapPit' cx='50%' cy='60%' r='70%'>
+        <stop offset='0%' stop-color='#220810'/>
+        <stop offset='60%' stop-color='#0b0408'/>
         <stop offset='100%' stop-color='rgba(0,0,0,0)'/>
       </radialGradient>
-    </defs>
-    <rect x='6' y='6' width='148' height='46' rx='18' fill='url(#trapSkin)' stroke='#f43f5e' stroke-width='3'/>
-    <ellipse cx='80' cy='48' rx='74' ry='18' fill='url(#trapGlow)' opacity='.45'/>
-    <g fill='#fef2f2' stroke='#1f0a0f' stroke-width='2'>
-      <path d='M22 30 L34 12 L46 30 Z'/>
-      <path d='M52 30 L64 14 L76 30 Z'/>
-      <path d='M82 30 L94 14 L106 30 Z'/>
-      <path d='M112 30 L124 12 L136 30 Z'/>
-    </g>
-    <path d='M24 18 C54 6, 106 6, 136 18' stroke='#f87171' stroke-width='4' stroke-linecap='round' fill='none'/>
-    <path d='M34 42 C60 54, 100 54, 126 42' stroke='#b91c1c' stroke-width='6' stroke-linecap='round' fill='none'/>
-    <circle cx='52' cy='22' r='7' fill='#f9fafb'/>
-    <circle cx='108' cy='22' r='7' fill='#f9fafb'/>
-    <circle cx='50' cy='22' r='3' fill='#0f172a'/>
-    <circle cx='106' cy='22' r='3' fill='#0f172a'/>
-  </svg>`);
-  Spr.bucketClosed = svgToImg(`
-  <svg xmlns='http://www.w3.org/2000/svg' width='160' height='60' viewBox='0 0 160 60'>
-    <defs>
-      <linearGradient id='trapSkinClosed' x1='0' y1='0' x2='0' y2='1'>
-        <stop offset='0%' stop-color='#15060b'/>
-        <stop offset='100%' stop-color='#020103'/>
+      <linearGradient id='trapSkinOpen' x1='0' y1='0' x2='0' y2='1'>
+        <stop offset='0%' stop-color='#4c0f16'/>
+        <stop offset='100%' stop-color='#0b0205'/>
       </linearGradient>
     </defs>
-    <rect x='6' y='12' width='148' height='40' rx='18' fill='url(#trapSkinClosed)' stroke='#7f1d1d' stroke-width='3'/>
-    <g fill='#fde68a' stroke='#1f0a0f' stroke-width='2' opacity='.85'>
-      <path d='M28 40 L36 26 L44 40 Z'/>
-      <path d='M60 40 L68 26 L76 40 Z'/>
-      <path d='M92 40 L100 26 L108 40 Z'/>
-      <path d='M124 40 L132 26 L140 40 Z'/>
+    <ellipse cx='75' cy='52' rx='70' ry='20' fill='url(#trapPit)' opacity='.7'/>
+    <path d='M12 18 C26 4, 124 4, 138 18 C142 46, 116 54, 75 56 C34 54, 8 46, 12 18 Z' fill='url(#trapSkinOpen)' stroke='#f43f5e' stroke-width='3'/>
+    <path d='M24 26 C36 14, 114 14, 126 26' stroke='#fb7185' stroke-width='4' stroke-linecap='round' fill='none'/>
+    <path d='M22 34 C38 48, 112 48, 128 34' stroke='#b91c1c' stroke-width='8' stroke-linecap='round' fill='none'/>
+    <g stroke='#1f0a0f' stroke-width='2.5' fill='#fef2f2'>
+      <path d='M26 24 L34 8 L42 24 Z'/>
+      <path d='M50 26 L58 6 L66 26 Z'/>
+      <path d='M84 26 L92 6 L100 26 Z'/>
+      <path d='M108 24 L116 8 L124 24 Z'/>
     </g>
-    <path d='M26 24 C56 16, 104 16, 134 24' stroke='#f87171' stroke-width='3' stroke-linecap='round' fill='none'/>
-    <circle cx='54' cy='24' r='6' fill='#f8fafc'/>
-    <circle cx='106' cy='24' r='6' fill='#f8fafc'/>
-    <circle cx='52' cy='24' r='2.5' fill='#111827'/>
-    <circle cx='104' cy='24' r='2.5' fill='#111827'/>
+    <circle cx='54' cy='20' r='7' fill='#f9fafb'/>
+    <circle cx='96' cy='20' r='7' fill='#f9fafb'/>
+    <circle cx='52' cy='20' r='3' fill='#0f172a'/>
+    <circle cx='94' cy='20' r='3' fill='#0f172a'/>
+    <path d='M48 40 Q75 48 102 40' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.6'/>
+  </svg>`);
+  Spr.bucketClosed = svgToImg(`
+  <svg xmlns='http://www.w3.org/2000/svg' width='150' height='58' viewBox='0 0 150 58'>
+    <defs>
+      <linearGradient id='trapSkinClosed' x1='0' y1='0' x2='0' y2='1'>
+        <stop offset='0%' stop-color='#2c0a10'/>
+        <stop offset='100%' stop-color='#050104'/>
+      </linearGradient>
+    </defs>
+    <path d='M14 24 C24 6, 126 6, 136 24 C130 44, 118 50, 75 52 C32 50, 20 44, 14 24 Z' fill='url(#trapSkinClosed)' stroke='#7f1d1d' stroke-width='3'/>
+    <path d='M22 26 C40 20, 110 20, 128 26' stroke='#f87171' stroke-width='4' stroke-linecap='round' fill='none'/>
+    <path d='M36 34 C52 36, 98 36, 114 34' stroke='#fde68a' stroke-width='3' stroke-linecap='round' opacity='.8'/>
+    <circle cx='56' cy='22' r='6' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
+    <circle cx='94' cy='22' r='6' fill='#fdf6ec' stroke='#1f0a0f' stroke-width='2'/>
+    <circle cx='54' cy='22' r='2.5' fill='#111827'/>
+    <circle cx='92' cy='22' r='2.5' fill='#111827'/>
   </svg>`);
 
   // ===== Game State =====
@@ -1106,7 +1114,7 @@
     hallucinations: [],
     decals: [],
     particles: [],
-    bucket: { x: W*0.25, y: H-46, w: 150, h: 40, vx: 2.2, open: true, anim:0 },
+    bucket: { x: W*0.25, y: H-60, w: 150, h: 52, vx: 2.2, open: true, anim:0 },
     aim: { x: W/2, y: 60, ang: -Math.PI/2, power: 14, ready: false },
     clearedCursed: 0,
     totalCursed: 0,
@@ -1970,6 +1978,8 @@
     stageEl.style.height = `${displayHeight}px`;
     stageEl.style.minHeight = `${displayHeight}px`;
     stageEl.style.maxWidth = `${displayWidth}px`;
+    stageEl.style.marginTop = `${Math.max(0, (availableHeight - displayHeight)/2)}px`;
+    stageEl.style.marginBottom = stageEl.style.marginTop;
     crtEl.style.transform = 'none';
     crtEl.style.width = `${displayWidth}px`;
     crtEl.style.height = `${displayHeight}px`;
