@@ -295,6 +295,10 @@
 
   const SETTINGS_KEY = 'evilPeggle.settings.v1';
   const CUSTOM_LEVELS_KEY = 'evilPeggle.customLevels.v1';
+  const COMMUNITY_USER_KEY = 'evilPeggle.community.user.v1';
+  const COMMUNITY_LIKES_KEY = 'evilPeggle.community.likes.v1';
+  const MAX_COMMUNITY_PEGS = 260;
+  const COMMUNITY_ALLOWED_TYPES = new Set(['normal','cursed','steel']);
   const defaultSettings = {
     playerName: 'Wanderer',
     bloodEnabled: true,
@@ -337,6 +341,13 @@
 
   const settings = loadSettings();
   const customLevels = loadCustomLevels();
+  let communityUserLevels = [];
+  let communityLikes = loadCommunityLikes();
+  let communityFlashMessage = null;
+
+  function setCommunityFlash(text, color='#facc15'){
+    communityFlashMessage = { text, color };
+  }
   if(!settings.stats || typeof settings.stats !== 'object') settings.stats = { bestScores:{} };
   if(!settings.stats.bestScores || typeof settings.stats.bestScores !== 'object') settings.stats.bestScores = {};
   if(typeof settings.storyCleared !== 'boolean') settings.storyCleared = false;
@@ -383,6 +394,193 @@
   function persistCustomLevels(){
     try{ localStorage.setItem(CUSTOM_LEVELS_KEY, JSON.stringify(customLevels)); }
     catch(err){ console.warn('Failed to store custom levels', err); }
+  }
+
+  function loadUserCommunityLevels(){
+    try{
+      const raw = localStorage.getItem(COMMUNITY_USER_KEY);
+      if(!raw) return [];
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        return parsed.map(normalizeStoredCommunityLevel).filter(Boolean);
+      }
+    } catch(err){
+      console.warn('Failed to load community levels', err);
+    }
+    return [];
+  }
+
+  function persistUserCommunityLevels(){
+    try{ localStorage.setItem(COMMUNITY_USER_KEY, JSON.stringify(communityUserLevels)); }
+    catch(err){ console.warn('Failed to store community levels', err); }
+  }
+
+  function loadCommunityLikes(){
+    try{
+      const raw = localStorage.getItem(COMMUNITY_LIKES_KEY);
+      if(!raw) return {};
+      const parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch(err){
+      console.warn('Failed to load community likes', err);
+    }
+    return {};
+  }
+
+  function persistCommunityLikes(){
+    try{ localStorage.setItem(COMMUNITY_LIKES_KEY, JSON.stringify(communityLikes)); }
+    catch(err){ console.warn('Failed to store community likes', err); }
+  }
+
+  function normalizeStoredCommunityLevel(entry){
+    if(!entry || typeof entry !== 'object') return null;
+    const clean = validateCommunityPayload(entry);
+    if(!clean) return null;
+    const id = clean.id || generateUserCommunityId(clean.name || 'custom');
+    return {
+      id,
+      name: clean.name,
+      description: clean.description,
+      difficulty: clean.difficulty,
+      pegs: clean.pegs,
+      baseLikes: Number(entry.baseLikes) || 0,
+      added: Number(entry.added) || Date.now()
+    };
+  }
+
+  function generateUserCommunityId(base){
+    const existingIds = new Set([
+      ...BUILTIN_COMMUNITY_LEVELS.map(l => l.id),
+      ...communityUserLevels.map(l => l.id)
+    ]);
+    let slug = slugifyId(base);
+    if(!slug) slug = 'custom';
+    let candidate = `user-${slug}`;
+    let attempt = 1;
+    while(existingIds.has(candidate)){
+      attempt++;
+      candidate = `user-${slug}-${attempt}`;
+    }
+    return candidate;
+  }
+
+  function slugifyId(str){
+    return String(str || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48);
+  }
+
+  function sanitizeCommunityText(text, fallback, maxLen=64){
+    const value = typeof text === 'string' ? text.trim() : '';
+    const clean = value.replace(/[\r\n]+/g, ' ').slice(0, maxLen);
+    return clean || fallback;
+  }
+
+  function sanitizeCommunityPegs(pegs){
+    if(!Array.isArray(pegs) || pegs.length === 0 || pegs.length > MAX_COMMUNITY_PEGS) return null;
+    const clean = [];
+    for(const raw of pegs){
+      const x = Number(raw?.x);
+      const y = Number(raw?.y);
+      if(!Number.isFinite(x) || !Number.isFinite(y)) return null;
+      if(x < 0 || x > W || y < 0 || y > H) return null;
+      const radiusRaw = Number(raw?.r);
+      const r = Number.isFinite(radiusRaw) && radiusRaw >= 6 && radiusRaw <= 60 ? radiusRaw : 20;
+      const typeRaw = typeof raw?.type === 'string' ? raw.type.toLowerCase() : 'normal';
+      if(!COMMUNITY_ALLOWED_TYPES.has(typeRaw)) return null;
+      clean.push({
+        x: Math.round(x * 100) / 100,
+        y: Math.round(y * 100) / 100,
+        r: Math.round(r * 100) / 100,
+        type: typeRaw
+      });
+    }
+    return clean;
+  }
+
+  function extractCommunityPegs(raw){
+    if(Array.isArray(raw)) return raw;
+    if(raw && typeof raw === 'object'){
+      if(Array.isArray(raw.pegs)) return raw.pegs;
+      if(Array.isArray(raw.layout?.pegs)) return raw.layout.pegs;
+      if(Array.isArray(raw.level?.pegs)) return raw.level.pegs;
+      if(Array.isArray(raw.data?.pegs)) return raw.data.pegs;
+    }
+    return null;
+  }
+
+  function validateCommunityPayload(raw){
+    if(!raw || typeof raw !== 'object') return null;
+    const pegsRaw = extractCommunityPegs(raw);
+    const pegs = sanitizeCommunityPegs(pegsRaw);
+    if(!pegs) return null;
+    const meta = raw.meta && typeof raw.meta === 'object' ? raw.meta : raw;
+    const name = sanitizeCommunityText(meta.name || meta.title, 'Community Draft', 48);
+    const description = sanitizeCommunityText(meta.description || meta.desc, 'Shared by a wanderer.', 120);
+    const difficulty = sanitizeCommunityText(meta.difficulty || meta.tier, 'Custom', 24);
+    let id = sanitizeCommunityText(meta.id || raw.id, '', 48).toLowerCase();
+    id = slugifyId(id);
+    if(id) id = id.startsWith('user-') ? id : `user-${id}`;
+    return { id, name, description, difficulty, pegs };
+  }
+
+  function getCommunityLevels(){
+    const builtin = BUILTIN_COMMUNITY_LEVELS.map(entry => ({ ...entry, source:'builtin' }));
+    const customs = communityUserLevels
+      .slice()
+      .sort((a,b)=> (b.added||0) - (a.added||0))
+      .map(entry => ({ ...entry, source:'user', baseLikes: entry.baseLikes || 0 }));
+    return [...builtin, ...customs];
+  }
+
+  function getCommunityLikeCount(entry){
+    const liked = isCommunityLiked(entry.id);
+    const base = Number(entry.baseLikes) || 0;
+    return base + (liked ? 1 : 0);
+  }
+
+  function getCommunityPegCount(entry){
+    if(Array.isArray(entry.pegs)) return entry.pegs.length;
+    if(typeof entry.build === 'function'){
+      try{
+        const result = entry.build();
+        return Array.isArray(result) ? result.length : '?';
+      } catch(err){
+        console.warn('Failed to inspect community level', err);
+      }
+    }
+    return '?';
+  }
+
+  function isCommunityLiked(id){
+    return !!communityLikes[id];
+  }
+
+  function toggleCommunityLike(id){
+    if(!id) return;
+    if(communityLikes[id]) delete communityLikes[id];
+    else communityLikes[id] = { liked:true, at:Date.now() };
+    persistCommunityLikes();
+  }
+
+  function addUserCommunityLevel(raw){
+    const clean = validateCommunityPayload(raw);
+    if(!clean) return null;
+    const id = clean.id && clean.id.startsWith('user-') ? clean.id : generateUserCommunityId(clean.name);
+    const entry = {
+      id,
+      name: clean.name,
+      description: clean.description,
+      difficulty: clean.difficulty,
+      pegs: clean.pegs,
+      baseLikes: 0,
+      added: Date.now()
+    };
+    communityUserLevels = [entry, ...communityUserLevels.filter(l => l.id !== id)].slice(0, 40);
+    persistUserCommunityLevels();
+    return entry;
   }
 
   function saveCustomLevel(name, pegs){
@@ -1690,6 +1888,30 @@
 
   const LEVEL_PARTS = [
     {
+      id: 'single-normal',
+      name: 'Single • Normal',
+      description: 'Place one normal peg exactly where you click.',
+      create(){
+        return [{ x:0, y:0, type:'normal' }];
+      }
+    },
+    {
+      id: 'single-cursed',
+      name: 'Single • Cursed',
+      description: 'One cursed peg for precision adjustments.',
+      create(){
+        return [{ x:0, y:0, type:'cursed' }];
+      }
+    },
+    {
+      id: 'single-steel',
+      name: 'Single • Steel',
+      description: 'Drop a lone steel peg to block angles.',
+      create(){
+        return [{ x:0, y:0, type:'steel' }];
+      }
+    },
+    {
       id: 'ring-tight',
       name: 'Ring • Tight',
       description: 'Eight-peg circle with alternating cursed pegs.',
@@ -1807,6 +2029,122 @@
         }
         return pegs;
       }
+    },
+    {
+      id: 'triple-stack',
+      name: 'Stack • Triple',
+      description: 'Three vertical pegs with a cursed core.',
+      create(){
+        return [
+          { x:0, y:-40, type:'normal' },
+          { x:0, y:0, type:'cursed' },
+          { x:0, y:40, type:'normal' }
+        ];
+      }
+    },
+    {
+      id: 'quad-line',
+      name: 'Line • Quad',
+      description: 'Four horizontal pegs, edges cursed.',
+      create(){
+        const spacing = 44;
+        return [
+          { x:-1.5*spacing, y:0, type:'cursed' },
+          { x:-0.5*spacing, y:0, type:'normal' },
+          { x:0.5*spacing, y:0, type:'normal' },
+          { x:1.5*spacing, y:0, type:'cursed' }
+        ];
+      }
+    },
+    {
+      id: 'diamond-cluster',
+      name: 'Cluster • Diamond',
+      description: 'Five-peg diamond with cursed center.',
+      create(){
+        return [
+          { x:0, y:0, type:'cursed' },
+          { x:0, y:-38, type:'normal' },
+          { x:32, y:0, type:'normal' },
+          { x:-32, y:0, type:'normal' },
+          { x:0, y:38, type:'normal' }
+        ];
+      }
+    },
+    {
+      id: 'grid-nine',
+      name: 'Grid • Nine',
+      description: 'Three-by-three grid with corner steels.',
+      create(){
+        const pegs=[];
+        const step = 46;
+        for(let ry=-1; ry<=1; ry++){
+          for(let cx=-1; cx<=1; cx++){
+            const type = (Math.abs(cx)===1 && Math.abs(ry)===1) ? 'steel' : (ry===0 && cx===0 ? 'cursed' : 'normal');
+            pegs.push({ x: cx*step, y: ry*step, type });
+          }
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'spiral-mini',
+      name: 'Spiral • Mini',
+      description: 'A tight five-turn spiral starting cursed.',
+      create(){
+        const pegs=[];
+        let radius = 18;
+        let angle = 0;
+        for(let i=0;i<16;i++){
+          pegs.push({
+            x: Math.cos(angle)*radius,
+            y: Math.sin(angle)*radius,
+            type: i%4===0 ? 'cursed' : 'normal'
+          });
+          radius += 6;
+          angle += Math.PI/4;
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'bucket-guard',
+      name: 'Bucket Guard',
+      description: 'Two steels and a cursed peg to flank the bucket.',
+      create(){
+        return [
+          { x:-70, y:0, type:'steel' },
+          { x:70, y:0, type:'steel' },
+          { x:0, y:-32, type:'cursed' }
+        ];
+      }
+    },
+    {
+      id: 'stair-five',
+      name: 'Stair • Five',
+      description: 'Ascending staircase with cursed final step.',
+      create(){
+        const pegs=[];
+        for(let i=0;i<5;i++){
+          pegs.push({ x:i*42, y:-i*38, type: i===4 ? 'cursed' : 'normal' });
+        }
+        return pegs;
+      }
+    },
+    {
+      id: 'halo-wide',
+      name: 'Halo • Wide',
+      description: 'Twenty peg halo with cursed quadrants.',
+      create(){
+        const pegs=[];
+        const radius = 200;
+        const count = 20;
+        for(let i=0;i<count;i++){
+          const angle = i/count * Math.PI * 2;
+          const type = (i % 5 === 0) ? 'cursed' : 'normal';
+          pegs.push({ x: Math.cos(angle)*radius, y: Math.sin(angle)*radius, type });
+        }
+        return pegs;
+      }
     }
   ];
 
@@ -1856,12 +2194,13 @@
   ];
   const TOTAL_LEVELS = LEVELS.length;
 
-  const COMMUNITY_LEVELS = [
+  const BUILTIN_COMMUNITY_LEVELS = [
     {
       id: 'ritual-embers',
       name: 'Ritual Embers',
       difficulty: 'Medium',
       description: 'A condensed Ember Bloom remix with tighter cursed rings.',
+      baseLikes: 24,
       build: () => serializePegs(emberBloom())
     },
     {
@@ -1869,6 +2208,7 @@
       name: 'Glasswork Labyrinth',
       difficulty: 'Hard',
       description: 'Steel gates guard alternating corridors—watch your ricochets.',
+      baseLikes: 31,
       build: () => serializePegs(labyrinthCage())
     },
     {
@@ -1876,9 +2216,14 @@
       name: 'Voided Spiral',
       difficulty: 'Spicy',
       description: 'A twin spiral packed with cursed pegs and sparse safe shots.',
+      baseLikes: 18,
       build: () => serializePegs(whisperSpiral())
     }
   ];
+
+  communityUserLevels = loadUserCommunityLevels();
+
+  let communityUserLevels = loadUserCommunityLevels();
 
   function loadLevel(i){
     const idx = Math.min(Math.max(1, i), TOTAL_LEVELS) - 1;
@@ -3086,53 +3431,156 @@
     stopGame();
     state = STATE.MENU;
 
-    const cards = COMMUNITY_LEVELS.map(entry => `<div class="community-card" data-id="${entry.id}">
-        <div class="community-meta">
-          <strong>${escHTML(entry.name)}</strong>
-          <span>${escHTML(entry.difficulty || 'Unknown')} • ${escHTML(entry.description || '')}</span>
-        </div>
-        <div class="community-actions">
-          <button class="btn" data-action="play">▶ Play</button>
-          <button class="btn" data-action="json">⧉ Copy JSON</button>
-        </div>
-      </div>`).join('');
+    const levels = getCommunityLevels();
+    const cards = levels.length
+      ? levels.map(entry => {
+          const liked = isCommunityLiked(entry.id);
+          const likeLabel = liked ? `♥ Liked (${getCommunityLikeCount(entry)})` : `♡ Like (${getCommunityLikeCount(entry)})`;
+          const sourceLabel = entry.source === 'user' ? 'User Upload' : 'Curated';
+          const pegCount = getCommunityPegCount(entry);
+          const removeButton = entry.source === 'user' ? '<button class="btn danger" data-action="remove">✖ Delete</button>' : '';
+          return `<div class="community-card" data-id="${entry.id}" data-source="${entry.source}">
+            <div class="community-meta">
+              <strong>${escHTML(entry.name)}</strong>
+              <span>${escHTML(entry.difficulty || 'Custom')} • ${sourceLabel} • ${pegCount} pegs</span>
+              <p>${escHTML(entry.description || '')}</p>
+            </div>
+            <div class="community-actions">
+              <button class="btn" data-action="play">▶ Play</button>
+              <button class="btn" data-action="json">⧉ Copy JSON</button>
+              <button class="btn" data-action="like">${likeLabel}</button>
+              ${removeButton}
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="warn">No community levels yet. Upload a JSON to seed the carnival.</div>';
+
+    const flashHtml = communityFlashMessage ? `<div class="warn" id="communityFlash" style="color:${communityFlashMessage.color}">${communityFlashMessage.text}</div>` : '';
+    communityFlashMessage = null;
 
     setOverlay(`
-      <div class="menu story" style="max-width:720px;width:min(96vw,720px);gap:18px">
+      <div class="menu story" style="max-width:840px;width:min(96vw,840px);gap:18px">
         <style id="communityStyles">
-          .community-card{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:16px;border:1px solid rgba(248,113,113,.24);background:rgba(18,18,26,.9)}
+          .community-card{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:16px;border:1px solid rgba(248,113,113,.24);background:rgba(18,18,26,.9)}
           .community-meta strong{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#f8fafc}
           .community-meta span{font-size:12px;color:rgba(226,232,240,.75)}
+          .community-meta p{margin:4px 0 0;font-size:12px;color:rgba(226,232,240,.7)}
           .community-actions{display:flex;gap:10px;flex-wrap:wrap}
-          .community-list{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto}
+          .community-list{display:flex;flex-direction:column;gap:12px;max-height:320px;overflow:auto;padding-right:6px}
+          .community-upload{display:flex;flex-direction:column;gap:10px;background:rgba(16,16,24,.88);border:1px solid rgba(248,113,113,.24);border-radius:16px;padding:16px}
+          .community-upload-grid{display:flex;gap:10px;flex-wrap:wrap}
+          .community-upload-file{position:relative;display:inline-flex;align-items:center;gap:8px;padding:.55rem 1rem;border-radius:12px;border:1px solid rgba(248,113,113,.32);background:rgba(28,29,38,.92);color:#f8fafc;font-size:12px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+          .community-upload-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+          #communityPaste{min-height:80px;padding:10px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(18,18,26,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px}
+          #communityMessage{min-height:16px;display:block}
         </style>
         <div class="title">Community Levels</div>
-        <p>Curated ritual layouts from the wider carnival. Pick one to warm up or copy the JSON into your own lab.</p>
+        <p>Curated rituals and player uploads. Drop new horrors here or favorite the sets you love.</p>
+        <section class="community-upload">
+          <div class="community-upload-grid">
+            <label class="community-upload-file">⬆ Choose JSON<input type="file" id="communityUpload" accept="application/json"></label>
+            <button class="btn" id="communityPasteAdd">➕ Add From Paste</button>
+          </div>
+          <textarea id="communityPaste" placeholder='Paste a JSON blob such as {"name":"Night Run","pegs":[...]}'></textarea>
+          <small class="warn" id="communityMessage"></small>
+          ${flashHtml}
+        </section>
         <div class="community-list" id="communityList">${cards}</div>
         <div class="row" style="gap:12px"><button class="btn" id="communityBack">← Back</button></div>
       </div>`);
 
+    const messageEl = document.getElementById('communityMessage');
+    const showMessage = (msg, color='#facc15') => {
+      if(messageEl){
+        messageEl.textContent = msg;
+        messageEl.style.color = color;
+      }
+    };
+
+    const uploadInput = document.getElementById('communityUpload');
+    uploadInput?.addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+      if(file.size > 512 * 1024){
+        showMessage('File is larger than 512KB. Trim unused pegs first.', '#f87171');
+        uploadInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try{
+          const parsed = JSON.parse(evt.target?.result || '');
+          const entry = addUserCommunityLevel(parsed);
+          if(entry){
+            setCommunityFlash(`Uploaded ${entry.name}.`, '#facc15');
+            showCommunityLevels();
+          } else {
+            showMessage('JSON did not contain a valid peg layout.', '#f87171');
+          }
+        } catch(err){
+          showMessage('Failed to parse JSON file.', '#f87171');
+        }
+      };
+      reader.onerror = () => showMessage('Unable to read file.', '#f87171');
+      reader.readAsText(file);
+      uploadInput.value = '';
+    });
+
+    const pasteBtn = document.getElementById('communityPasteAdd');
+    const pasteArea = document.getElementById('communityPaste');
+    pasteBtn?.addEventListener('click', () => {
+      const text = pasteArea?.value.trim();
+      if(!text){ showMessage('Paste JSON into the field first.', '#f87171'); return; }
+      try{
+        const parsed = JSON.parse(text);
+        const entry = addUserCommunityLevel(parsed);
+        if(entry){
+          pasteArea.value = '';
+          setCommunityFlash(`Added ${entry.name}.`, '#facc15');
+          showCommunityLevels();
+        } else {
+          showMessage('JSON did not contain a valid peg layout.', '#f87171');
+        }
+      } catch(err){
+        showMessage('Invalid JSON format.', '#f87171');
+      }
+    });
+
     const listEl = document.getElementById('communityList');
-    listEl?.querySelectorAll('.community-card').forEach(card => {
-      const id = card.dataset.id;
-      const entry = COMMUNITY_LEVELS.find(item => item.id === id);
+    listEl?.addEventListener('click', e => {
+      const button = e.target.closest('button[data-action]');
+      if(!button) return;
+      const card = button.closest('.community-card');
+      const id = card?.dataset.id;
+      if(!id) return;
+      const entry = getCommunityLevels().find(item => item.id === id);
       if(!entry) return;
-      card.querySelector('[data-action="play"]')?.addEventListener('click', () => {
+      const action = button.dataset.action;
+      if(action === 'play'){
         startCommunityLevel(entry);
-      });
-      card.querySelector('[data-action="json"]')?.addEventListener('click', () => {
-        const data = { version: VERSION, pegs: entry.build() };
+      } else if(action === 'json'){
+        const data = { version: VERSION, pegs: entry.pegs || (typeof entry.build === 'function' ? entry.build() : []) };
         const text = JSON.stringify(data, null, 2);
         if(navigator.clipboard){
           navigator.clipboard.writeText(text).then(() => {
             showFloat('Copied JSON to clipboard', W/2, H/2, { color:'#facc15', glow:'#f97316', duration:90, rise:0, scale:1.1 });
           }).catch(() => {
-            showFloat('Clipboard blocked', W/2, H/2, { color:'#f87171', glow:'#fb7185', duration:90, rise:0, scale:1.1 });
+            showMessage('Clipboard blocked by browser.', '#f87171');
           });
-        } else {
-          showFloat('Clipboard unavailable', W/2, H/2, { color:'#f87171', glow:'#fb7185', duration:90, rise:0, scale:1.1 });
         }
-      });
+      } else if(action === 'like'){
+        toggleCommunityLike(id);
+        showCommunityLevels();
+      } else if(action === 'remove' && entry.source === 'user'){
+        communityUserLevels = communityUserLevels.filter(level => level.id !== id);
+        persistUserCommunityLevels();
+        if(communityLikes[id]){
+          delete communityLikes[id];
+          persistCommunityLikes();
+        }
+        setCommunityFlash(`Removed ${entry.name}.`, '#facc15');
+        showCommunityLevels();
+      }
     });
 
     document.getElementById('communityBack')?.addEventListener('click', () => startMenu());
@@ -3147,7 +3595,8 @@
     setOverlay('');
     state = STATE.PLAY;
     world.score = 0;
-    loadCustomLayout(entry.build());
+    const layout = entry.pegs || (typeof entry.build === 'function' ? entry.build() : []);
+    loadCustomLayout(layout);
     updateHUD();
     world.aim.ready = true;
     syncHUDVisibility();
@@ -3170,7 +3619,33 @@
       : '<button class="btn" id="freeplayBtn">🎯 Freeplay</button>';
     const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Beat level 1 in Story Run to unlock Freeplay.</div>' : '';
     const resumeLabel = settings.storyProgress>1 && settings.storyProgress<=TOTAL_LEVELS? `Continue (Level ${settings.storyProgress})` : '▶ Story Run';
-    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn play good" id="playBtn">${resumeLabel}</button>${freeplayButton}<button class="btn" id="communityBtn">🌐 Community</button><button class="btn" id="labBtn">🧪 Level Lab</button><button class="btn" id="loreBtn">ℹ How to Play</button><button class="btn" id="creditsBtn">📜 Credits</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
+    setOverlay(`
+      <div class="menu" style="gap:18px">
+        <style id="homeStyles">
+          .menu-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;max-width:520px;margin:0 auto}
+          .menu-actions .btn{justify-content:center}
+          .menu-meta{display:grid;gap:14px;width:100%;max-width:520px;margin:0 auto}
+        </style>
+        <div class="title">Evil Peggle</div>
+        <div class="subtitle">Choose your torment</div>
+        <div class="menu-actions">
+          <button class="btn play good" id="playBtn">${resumeLabel}</button>
+          ${freeplayButton}
+          <button class="btn" id="communityBtn">🌐 Community</button>
+          <button class="btn" id="labBtn">🧪 Level Lab</button>
+          <button class="btn" id="loreBtn">ℹ How to Play</button>
+          <button class="btn" id="creditsBtn">📜 Credits</button>
+        </div>
+        <div class="menu-meta">
+          <div>
+            <div class="score-list-title">Personal Best</div>
+            ${scoreHtml}
+            ${lockNote}
+          </div>
+          <div class="warn">${hint}</div>
+          <div class="flash">PRESS SPACE</div>
+        </div>
+      </div>`);
     document.getElementById('playBtn').onclick=()=> startGame();
     const freeBtn=document.getElementById('freeplayBtn');
     if(freeBtn && !freeplayLocked) freeBtn.onclick = () => showFreeplayMenu();
