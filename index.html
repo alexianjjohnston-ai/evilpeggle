@@ -21,14 +21,14 @@
     main{display:grid;place-items:center;padding:0.5rem clamp(0.5rem,2vw,1rem)}
 
     /* CRT look */
-    .crt{position:relative;max-width:960px;width:100%}
+    .crt{position:relative;width:min(960px,100%);margin:0 auto}
     .crt:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 3px)}
     .crt:after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 200px rgba(0,0,0,.82)}
     body[data-fear='3'] .crt:after{box-shadow:inset 0 0 240px rgba(185,28,28,.55)}
     body[data-fear='4'] .crt:after{box-shadow:inset 0 0 320px rgba(220,20,60,.65)}
     body[data-fear='4'] canvas{filter:saturate(1.12) contrast(1.05)}
 
-    canvas{display:block;width:100%;height:auto;max-width:960px;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
+    canvas{display:block;width:100%;height:auto;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
     .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:20px 26px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12)}
     .hud-top,.hud-bottom{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
@@ -215,6 +215,7 @@
     fearEffects: true,
     showTutorial: true,
     storySeen: false,
+    storyCleared: false,
     quality: 'Med',
     stats: { bestScores: {} }
   };
@@ -244,6 +245,7 @@
   const settings = loadSettings();
   if(!settings.stats || typeof settings.stats !== 'object') settings.stats = { bestScores:{} };
   if(!settings.stats.bestScores || typeof settings.stats.bestScores !== 'object') settings.stats.bestScores = {};
+  if(typeof settings.storyCleared !== 'boolean') settings.storyCleared = false;
   refreshPlayerBadge();
   setFearStage(getFearStage(0));
 
@@ -721,16 +723,189 @@
   function ring(cx,cy,rad,count,type='normal'){ const arr=[]; for(let i=0;i<count;i++){ const a=i/count*Math.PI*2; arr.push({x:cx+Math.cos(a)*rad,y:cy+Math.sin(a)*rad,r:20,type,hit:false,t:Math.random()*100}); } return arr; }
   function spiral(cx, cy, turns=10, step=22, count=90){ const arr=[]; let t=0; for(let i=0;i<count;i++){ const r= t*step; const a = t * 0.55; arr.push({x:cx+Math.cos(a)*r, y:cy+Math.sin(a)*r, r:18, type: (i%7===0? 'cursed':'normal'), hit:false,t:Math.random()*100}); t += turns/count; } return arr; }
   function mix(arr, nSteel=10){ for(let i=0;i<nSteel && i<arr.length;i++) arr[i].type='steel'; return arr; }
+  const peg = (x,y,type='normal',r=20)=>({x,y,r,type,hit:false,t:Math.random()*100});
+  function columnsLayout(colCount=6,rowCount=6,offsetY=130,shift=20,curseStride=3){
+    const arr=[]; const gapX=W/(colCount+1); const gapY=52;
+    for(let c=0;c<colCount;c++){
+      for(let r=0;r<rowCount;r++){
+        const x = gapX*(c+1);
+        const y = offsetY + r*gapY + (c%2?shift:-shift);
+        const cursed = ((r + c)%curseStride===0);
+        arr.push(peg(x,y,cursed?'cursed':'normal'));
+      }
+    }
+    return arr;
+  }
+  function waveLayout(rows=5, cols=10, offsetY=120, amplitude=36, freq=0.6){
+    const arr=[]; const gapX=W/(cols+1); const gapY=52;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x = gapX*(c+1);
+        const baseY = offsetY + r*gapY;
+        const y = baseY + Math.sin((c+ r*0.4)*freq)*amplitude;
+        const cursed = ((c+r)%4===0);
+        arr.push(peg(x,y,cursed?'cursed':'normal'));
+      }
+    }
+    return arr;
+  }
+  function targetLayout(cx, cy){
+    return [
+      ...ring(cx, cy, 60, 8),
+      ...ring(cx, cy, 100, 12, 'cursed'),
+      ...ring(cx, cy, 140, 16),
+      ...ring(cx, cy, 180, 20, 'cursed')
+    ];
+  }
+  function scatterLayout(count=48, cursedRatio=0.26, top=120, bottom=H-140){
+    const arr=[];
+    for(let i=0;i<count;i++){
+      const type = (Math.random()<cursedRatio)? 'cursed':'normal';
+      const x = 70 + Math.random()*(W-140);
+      const y = top + Math.random()*(bottom-top);
+      arr.push(peg(x,y,type));
+    }
+    return arr;
+  }
+  function doubleSpiral(){
+    const a = spiral(W*0.25, H*0.45, 10, 14, 70).map(p=>({ ...p, type: (Math.random()<0.25)?'cursed':p.type }));
+    const b = spiral(W*0.75, H*0.45, 10, 14, 70).map(p=>({ ...p, type: (Math.random()<0.25)?'cursed':p.type }));
+    return a.concat(b);
+  }
+  function ladderLayout(steps=5, offsetY=140){
+    const arr=[]; const gapX = W/(steps+3);
+    for(let i=0;i<steps;i++){
+      const y = offsetY + i*60;
+      for(let j=0;j<5;j++) arr.push(peg(120 + j*110, y, (j===2||i===Math.floor(steps/2))?'cursed':'normal'));
+      arr.push(peg(120 + i*gapX, y-30, 'steel'));
+      arr.push(peg(W-120 - i*gapX, y+30, 'steel'));
+    }
+    return arr;
+  }
+  function canyonLayout(){
+    const arr=[];
+    arr.push(...columnsLayout(5,6,130,18,4));
+    for(let i=0;i<8;i++) arr.push(peg(W/2 + (i-3.5)*40, 160 + Math.sin(i*0.6)*30, i%2? 'cursed':'normal'));
+    for(let i=0;i<6;i++) arr.push(peg(W/2 + (i-2.5)*50, 320 + Math.cos(i*0.5)*28, i%3===0?'cursed':'normal'));
+    return arr;
+  }
+  function blossomLayout(){
+    const arr=[];
+    arr.push(...targetLayout(W/2, 220));
+    arr.push(...ring(W/2, 220, 40, 5, 'cursed'));
+    arr.push(...ring(W/2, 220, 210, 24));
+    return arr;
+  }
+  function zigzagLayout(){
+    const arr=[]; const rows=8; const cols=8; const gapX=W/(cols+1); const gapY=48;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        const x = gapX*(c+1);
+        const y = 120 + r*gapY + (r%2?20:-20);
+        if((r+c)%2===0) arr.push(peg(x,y,'cursed')); else arr.push(peg(x,y));
+      }
+    }
+    return arr;
+  }
+  function flameLayout(){
+    const arr=[];
+    arr.push(...waveLayout(4,9,140,46,0.7));
+    arr.push(...targetLayout(W/2, H*0.68));
+    return arr;
+  }
+  function shieldLayout(){
+    const arr=[];
+    arr.push(...ring(W/2, H*0.45, 120, 14, 'cursed'));
+    arr.push(...ring(W/2, H*0.45, 160, 18));
+    for(let i=0;i<8;i++){
+      const x = 160 + i*100;
+      arr.push(peg(x, 140 + Math.sin(i*0.5)*30, i%3===0?'cursed':'normal'));
+      arr.push(peg(x, 360 + Math.cos(i*0.4)*26, i%4===0?'steel':'normal'));
+    }
+    return arr;
+  }
+  function vortexLayout(){
+    const arr=[];
+    arr.push(...spiral(W/2, H/2, 14, 18, 130));
+    arr.forEach((p,i)=>{ if(i%5===0) p.type='cursed'; });
+    arr.push(...ring(W/2, H/2, 210, 24, 'steel'));
+    return arr;
+  }
+  function diamondsLayout(){
+    const arr=[];
+    const centers=[[W*0.25,200],[W*0.5,140],[W*0.75,200],[W*0.25,320],[W*0.5,380],[W*0.75,320]];
+    centers.forEach(([cx,cy],idx)=>{
+      const offsets=[[0,-40],[40,0],[0,40],[-40,0]];
+      offsets.forEach((off,i)=>{ arr.push(peg(cx+off[0], cy+off[1], (idx+i)%3===0?'cursed':'normal')); });
+      arr.push(peg(cx,cy, idx%2?'cursed':'normal'));
+    });
+    return arr;
+  }
+  function arcGauntlet(){
+    const arr=[];
+    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 150 + Math.sin(i*0.6)*40, i%3===0?'cursed':'normal'));
+    for(let i=0;i<9;i++) arr.push(peg(120 + i*90, 320 + Math.cos(i*0.6)*40, i%3===1?'cursed':'normal'));
+    arr.push(...ring(W/2, 235, 180, 24, 'steel'));
+    return arr;
+  }
+  function meteorLayout(){
+    const arr = scatterLayout(52, 0.22, 100, H-120);
+    for(let i=0;i<6;i++) arr.push(peg(120 + i*140, 180, 'steel'));
+    return arr;
+  }
+  function pillarsLayout(){
+    const arr=[];
+    arr.push(...columnsLayout(7,7,120,22,4));
+    arr.push(...ring(W/2, 380, 120, 12, 'cursed'));
+    return arr;
+  }
+  function cascadeLayout(){
+    const arr=[];
+    for(let r=0;r<6;r++){
+      for(let c=0;c<6;c++){
+        const x = 160 + c*110 + (r%2?55:0);
+        const y = 140 + r*60;
+        arr.push(peg(x,y, (r===c||c===5-r)?'cursed':'normal'));
+      }
+    }
+    return arr;
+  }
+  function finaleLayout(){
+    const arr=[];
+    arr.push(...targetLayout(W/2, 220));
+    arr.push(...doubleSpiral());
+    arr.push(...scatterLayout(20, 0.3, 120, H-140));
+    return arr;
+  }
 
   const LEVELS = [
     () => makeGrid(5,9,140,8,6),
-    () => [...makeGrid(6,10,120,6,5), ...ring(W/2, H/2, 160, 18, 'cursed')],
-    () => mix(makeGrid(7,11,110,5,4), 12),
-    () => spiral(W/2, H/2, 12, 20, 88),
+    () => [...makeGrid(4,8,150,5,4), ...ring(W/2, 210, 150, 16, 'cursed')],
+    () => [...mix(makeGrid(6,10,120,5,3), 10), ...ring(W/2, 320, 100, 10)],
+    () => spiral(W/2, H/2, 12, 20, 120),
+    () => columnsLayout(6,6,130,18,3),
+    () => waveLayout(5,9,130,34,0.55),
+    () => targetLayout(W/2, 220),
+    () => scatterLayout(48, 0.28, 120, H-140),
+    () => doubleSpiral(),
+    () => ladderLayout(5,140),
+    () => canyonLayout(),
+    () => blossomLayout(),
+    () => zigzagLayout(),
+    () => flameLayout(),
+    () => shieldLayout(),
+    () => vortexLayout(),
+    () => diamondsLayout(),
+    () => arcGauntlet(),
+    () => meteorLayout(),
+    () => finaleLayout(),
   ];
+  const TOTAL_LEVELS = LEVELS.length;
 
   function loadLevel(i){
-    world.level = i; world.pegs = LEVELS[(i-1)%LEVELS.length]();
+    const idx = Math.min(Math.max(1, i), TOTAL_LEVELS) - 1;
+    world.level = i;
+    world.pegs = LEVELS[idx]();
     world.totalCursed = world.pegs.filter(p=>p.type==='cursed').length;
     world.clearedCursed = 0; world.ball=null; world.aim.ready=true; world.ballsLeft = Math.max(6, 12 - i);
     world.streak=0; lastStreakPing=0; world.fear = Math.max(0, world.fear-10); world.ballType=POW.NONE; world.pierce=0; world.hallucinations=[];
@@ -980,10 +1155,15 @@
     world.aim.ready=false;
     const hint = MENU_HINTS[Math.floor(Math.random()*MENU_HINTS.length)];
     const scoreHtml = renderScoreList();
-    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px"><button class="btn play good" id="playBtn">▶ Story Run</button><button class="btn" id="freeplayBtn">🎯 Freeplay</button><button class="btn" id="loreBtn">ℹ How to Play</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
+    const freeplayLocked = !settings.storyCleared;
+    const freeplayButton = freeplayLocked
+      ? '<button class="btn" id="freeplayBtn" disabled title="Finish Story Run to unlock">🔒 Freeplay</button>'
+      : '<button class="btn" id="freeplayBtn">🎯 Freeplay</button>';
+    const lockNote = freeplayLocked? '<div class="warn" style="font-size:11px">Finish Story Run to unlock Freeplay.</div>' : '';
+    setOverlay(`<div class="menu"><div class="title">Evil Peggle</div><div class="subtitle">Choose your torment</div><div class="row" style="gap:10px"><button class="btn play good" id="playBtn">▶ Story Run</button>${freeplayButton}<button class="btn" id="loreBtn">ℹ How to Play</button></div><div class="score-list-title">Personal Best</div>${scoreHtml}${lockNote}<div class="warn">${hint}</div><div class="flash">PRESS SPACE</div></div>`);
     document.getElementById('playBtn').onclick=()=> startGame();
     const freeBtn=document.getElementById('freeplayBtn');
-    if(freeBtn) freeBtn.onclick = () => showFreeplayMenu();
+    if(freeBtn && !freeplayLocked) freeBtn.onclick = () => showFreeplayMenu();
     const loreBtn=document.getElementById('loreBtn');
     if(loreBtn) loreBtn.onclick = () => showStoryIntro({ markSeen:false, onComplete:startMenu });
   }
@@ -999,6 +1179,12 @@
   }
 
   function showFreeplayMenu(){
+    if(!settings.storyCleared){
+      setOverlay(`<div class="menu"><div class="title">Freeplay Locked</div><div class="subtitle">Finish Story Run to unlock</div><button class="btn" id="lockedBack">← Back</button></div>`);
+      const back=document.getElementById('lockedBack');
+      if(back) back.onclick = () => startMenu();
+      return;
+    }
     state=STATE.MENU;
     world.aim.ready=false;
     const cards = LEVELS.map((_,i)=>{
@@ -1029,12 +1215,35 @@
     state = STATE.MENU;
     world.aim.ready = false;
     const best = formatScore(getBestScore(freeplayLevel));
-    setOverlay(`<div class="menu"><div class="title">Level ${freeplayLevel} Cleared</div><div class="subtitle">Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayReplay">↺ Replay</button><button class="btn" id="freeplaySelect">🎯 Levels</button><button class="btn" id="freeplayMenu">☰ Menu</button></div></div>`);
+    setOverlay(`<div class="menu"><div class="title">Level ${freeplayLevel} Cleared</div><div class="subtitle">Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayReplay">↺ Encore</button><button class="btn" id="freeplaySelect">🎯 Levels</button><button class="btn" id="freeplayMenu">☰ Menu</button></div></div>`);
     document.getElementById('freeplayReplay').onclick = () => startFreeplay(freeplayLevel);
     document.getElementById('freeplaySelect').onclick = () => showFreeplayMenu();
     document.getElementById('freeplayMenu').onclick = () => startMenu();
   }
   function showGameOver(){ const final = Math.floor(world.score); setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`); document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; world.level=1; loadLevel(1); updateHUD(); }; document.getElementById('menuBtn').onclick=()=> startMenu(); }
+
+  function showStoryComplete(finalScore){
+    state = STATE.MENU;
+    world.aim.ready=false;
+    settings.storyCleared = true;
+    persistSettings();
+    const formatted = formatScore(finalScore);
+    setOverlay(`<div class="menu"><div class="title">Encore Complete</div><div class="subtitle">Total score <b>${formatted}</b></div><div class="warn">Freeplay unlocked! Revisit any haunt for better scores.</div><div class="row" style="gap:10px"><button class="btn good" id="storyReplay">▶ Replay Story</button><button class="btn" id="storyFreeplay">🎯 Freeplay</button><button class="btn" id="storyMenu">☰ Menu</button></div></div>`);
+    document.getElementById('storyReplay').onclick = () => startGame();
+    document.getElementById('storyFreeplay').onclick = () => showFreeplayMenu();
+    document.getElementById('storyMenu').onclick = () => startMenu();
+  }
+
+  function showFreeplayLoss(){
+    state = STATE.MENU;
+    world.aim.ready=false;
+    const levelScore = Math.max(0, Math.floor(world.score - (world.levelBaselineScore||0)));
+    const best = formatScore(getBestScore(freeplayLevel));
+    setOverlay(`<div class="menu"><div class="title">Encore Failed</div><div class="subtitle">Level ${freeplayLevel} · Score ${formatScore(levelScore)}</div><div class="warn">Personal best: ${best}</div><div class="row" style="gap:10px"><button class="btn good" id="freeplayEncore">↺ Encore</button><button class="btn" id="freeplayLevels">🎯 Levels</button><button class="btn" id="freeplayMenuLoss">☰ Menu</button></div></div>`);
+    document.getElementById('freeplayEncore').onclick = () => startFreeplay(freeplayLevel);
+    document.getElementById('freeplayLevels').onclick = () => showFreeplayMenu();
+    document.getElementById('freeplayMenuLoss').onclick = () => startMenu();
+  }
 
   // ===== Draw helpers =====
   function drawBG(){
@@ -1163,7 +1372,13 @@
       world.aim.ready=true;
       world.streak=0;
       lastStreakPing=0;
-      if(world.ballsLeft<=0){ state=STATE.GAMEOVER; showGameOver(); }
+      if(world.ballsLeft<=0){
+        if(gameMode === MODE.FREEPLAY){
+          showFreeplayLoss();
+        } else {
+          state=STATE.GAMEOVER; showGameOver();
+        }
+      }
     }
   }
 
