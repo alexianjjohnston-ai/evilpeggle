@@ -134,7 +134,8 @@
     .option-wheel button[disabled]{opacity:0.3;cursor:not-allowed;border-color:rgba(148,163,184,.35)}
     .option-wheel button:hover{transform:translateY(-2px);border-color:rgba(248,113,113,.7)}
     .option-wheel button:active{transform:translateY(0)}
-    .option-wheel .option-track{flex:1;display:flex;overflow:hidden;border-radius:14px;border:1px solid rgba(248,113,113,.24);background:rgba(24,26,32,.75);box-shadow:inset 0 4px 16px rgba(0,0,0,.4);height:34px}
+    .option-wheel .option-track{position:relative;flex:1;display:flex;overflow:hidden;border-radius:14px;border:1px solid rgba(248,113,113,.24);background:rgba(24,26,32,.75);box-shadow:inset 0 4px 16px rgba(0,0,0,.4);height:34px}
+    .option-wheel .option-track .wheel-inner{display:flex;transition:transform .25s ease}
     .option-wheel .option-track span{flex:1;display:flex;align-items:center;justify-content:center;padding:0 8px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:12px;color:#f8fafc;cursor:pointer;user-select:none;white-space:nowrap;transition:background .2s ease,color .2s ease}
     .option-wheel .option-track span:hover{background:rgba(148,163,184,.25)}
     .option-wheel .option-track span.active{background:rgba(248,113,113,.32);color:#fde68a;border-left:1px solid rgba(248,113,113,.45);border-right:1px solid rgba(248,113,113,.45);box-shadow:inset 0 0 16px rgba(248,113,113,.35)}
@@ -629,6 +630,17 @@
       });
     }
     const deviceOptionIds = DEVICE_OPTIONS.map(opt => opt.id);
+    const centerWheel = (track, index) => {
+      const inner = track.querySelector('.wheel-inner');
+      if(!inner) return;
+      const spans = [...inner.children];
+      if(!spans.length) return;
+      const width = track.clientWidth;
+      const spanWidth = spans[0].clientWidth;
+      const offset = Math.max(0, index) * spanWidth;
+      const target = offset - (width - spanWidth)/2;
+      inner.style.transform = `translateX(${-target}px)`;
+    };
     const deviceLocked = state !== STATE.MENU;
     const renderDeviceOptions = () => {
       if(!deviceTrack) return;
@@ -636,9 +648,11 @@
         settings.deviceType = DEVICE_OPTIONS[0]?.id || 'laptop';
         persistSettings();
       }
-      deviceTrack.innerHTML = DEVICE_OPTIONS.map(opt => `<span data-id="${opt.id}" class="${opt.id===settings.deviceType? 'active':''}">${escHTML(opt.label)}</span>`).join('');
+      const inner = DEVICE_OPTIONS.map(opt => `<span data-id="${opt.id}" class="${opt.id===settings.deviceType? 'active':''}">${escHTML(opt.label)}</span>`).join('');
+      deviceTrack.innerHTML = `<div class="wheel-inner">${inner}</div>`;
       if(deviceLocked){ deviceTrack.closest('.option-wheel')?.classList.add('disabled'); }
       else { deviceTrack.closest('.option-wheel')?.classList.remove('disabled'); }
+      centerWheel(deviceTrack, DEVICE_OPTIONS.findIndex(opt=>opt.id===settings.deviceType));
     };
     const cycleDevice = (dir) => {
       const idx = Math.max(0, deviceOptionIds.indexOf(settings.deviceType));
@@ -677,9 +691,11 @@
       if(!qualityOptions.includes(settings.quality)){
         settings.quality = 'Med';
       }
-      qualityTrack.innerHTML = qualityOptions.map(opt => `<span data-quality="${opt}" class="${opt===settings.quality? 'active':''}">${escHTML(opt)}</span>`).join('');
+      const inner = qualityOptions.map(opt => `<span data-quality="${opt}" class="${opt===settings.quality? 'active':''}">${escHTML(opt)}</span>`).join('');
+      qualityTrack.innerHTML = `<div class="wheel-inner">${inner}</div>`;
       if(qualityLocked){ qualityTrack.closest('.option-wheel')?.classList.add('disabled'); }
       else { qualityTrack.closest('.option-wheel')?.classList.remove('disabled'); }
+      centerWheel(qualityTrack, qualityOptions.indexOf(settings.quality));
     };
     const cycleQuality = (dir) => {
       const idx = Math.max(0, qualityOptions.indexOf(settings.quality));
