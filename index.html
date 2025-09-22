@@ -36,6 +36,8 @@
     canvas{display:block;width:100%;height:100%;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
     .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;padding:18px 24px 14px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12);opacity:1;transition:opacity .2s ease}
+    .hud-controls{position:absolute;top:18px;right:24px;display:none;flex-direction:column;gap:10px;z-index:6;pointer-events:auto}
+    .hud-btn{font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:.42rem .85rem;justify-content:center}
     .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
     .hud-bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:1.2rem;flex-wrap:wrap}
     .hud-cluster{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-start}
@@ -94,6 +96,10 @@
     .device-card strong{font:600 14px/1.2 "Inter",ui-sans-serif;color:#f8fafc;letter-spacing:.08em;text-transform:uppercase}
     .device-card span{font-size:12px;color:rgba(226,232,240,0.82);text-align:center;line-height:1.45}
     .menu{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:18px;background:linear-gradient(180deg, rgba(24,24,28,.92), rgba(16,16,22,.96));backdrop-filter:blur(16px);padding:34px;border:1px solid rgba(248,113,113,.38);border-radius:18px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.62)}
+    .confirm-backdrop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,6,12,.6);backdrop-filter:blur(10px);z-index:120}
+    .confirm-modal{gap:16px;padding:26px 28px;max-width:360px}
+    .confirm-modal p{margin:0;font-size:13px;color:rgba(248,202,202,.84)}
+    .confirm-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
     .menu.story p{max-width:520px;margin:0;color:rgba(248,202,202,.82)}
     .story-progress{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(248,113,113,.62)}
     .title{font:800 48px/1.05 "Cinzel", Trajan, serif;letter-spacing:.08em;text-transform:uppercase;text-align:center;text-shadow:0 0 22px rgba(239,68,68,.75);color:#fef2f2}
@@ -247,6 +253,10 @@
             </div>
           </div>
         </div>
+        <div class="hud-controls" id="hudControls">
+          <button class="btn hud-btn" id="hudHomeBtn">⌂ Home</button>
+          <button class="btn hud-btn" id="hudRestartBtn">⟲ Restart</button>
+        </div>
           <div class="overlay" id="uiOverlay"></div>
           <div class="orientation-overlay" id="orientationOverlay"></div>
         </div>
@@ -285,6 +295,9 @@
   const fearStageLabel = document.getElementById('fearStageLabel');
   const powerLabel  = document.getElementById('powerLabel');
   const hudLayer = document.getElementById('hudLayer');
+  const hudControls = document.getElementById('hudControls');
+  const hudHomeBtn = document.getElementById('hudHomeBtn');
+  const hudRestartBtn = document.getElementById('hudRestartBtn');
   const progressFill= document.getElementById('progressFill');
   const settingsModal = document.getElementById('settingsModal');
   const playerBadge = document.getElementById('playerBadge');
@@ -670,8 +683,9 @@
 
   function buildSettingsMarkup(){
     const nameVal = escHTML(settings.playerName || '');
-    const qualityOpts = QUALITY_OPTIONS.map(opt => `<option ${opt===settings.quality? 'selected':''}>${opt}</option>`).join('');
-    const deviceOpts = DEVICE_OPTIONS.map(opt => `<option value="${opt.id}" ${opt.id===settings.deviceType? 'selected':''}>${escHTML(opt.label)}</option>`).join('');
+    const resumeActive = state === STATE.PLAY;
+    const resumeLabel = resumeActive ? '✔ Resume' : '✖ Close';
+    const resumeClass = resumeActive ? 'btn good' : 'btn';
     const adminSection = settings.adminUnlocked ? `
       <section class="settings-section">
         <h3>Admin Tools</h3>
@@ -811,10 +825,7 @@
         <section class="settings-section">
           <h3>Actions</h3>
           <div class="settings-actions">
-            <button class="btn" id="modalHomeBtn">⌂ Menu</button>
-            <button class="btn danger" id="modalResetBtn">⟲ Reset Level</button>
-            <button class="btn" id="modalCloseBtn">✖ Close</button>
-            <button class="btn good" id="modalResumeBtn">✔ Resume</button>
+            <button class="${resumeClass}" id="modalResumeBtn">${resumeLabel}</button>
           </div>
           <div class="settings-actions minor">
             <button class="btn" id="modalGuideBtn">ℹ How to Play</button>
@@ -842,9 +853,6 @@
     const qualityTrack = modal.querySelector('#qualityOptions');
     const qualityPrevBtn = modal.querySelector('#qualityPrevBtn');
     const qualityNextBtn = modal.querySelector('#qualityNextBtn');
-    const homeButton = modal.querySelector('#modalHomeBtn');
-    const resetButton = modal.querySelector('#modalResetBtn');
-    const closeButton = modal.querySelector('#modalCloseBtn');
     const resumeButton = modal.querySelector('#modalResumeBtn');
     const storyButton = modal.querySelector('#modalGuideBtn');
     const forgetButton = modal.querySelector('#modalForgetBtn');
@@ -992,18 +1000,6 @@
       qualityPrevBtn?.setAttribute('disabled','true');
       qualityNextBtn?.setAttribute('disabled','true');
     }
-    if(homeButton){
-    homeButton.addEventListener('click', () => {
-        closeSettings();
-        startMenu();
-      });
-    }
-    if(resetButton){
-      resetButton.addEventListener('click', () => {
-        doResetLevel();
-      });
-    }
-    if(closeButton){ closeButton.addEventListener('click', closeSettings); }
     if(resumeButton){ resumeButton.addEventListener('click', closeSettings); }
     if(storyButton){
       storyButton.addEventListener('click', () => {
@@ -1124,6 +1120,34 @@
   const muteBtn = document.getElementById('muteBtn');
   const menuBtn = document.getElementById('menuBtn');
   if(menuBtn){ menuBtn.onclick = () => openSettings(); }
+  if(hudHomeBtn){
+    hudHomeBtn.addEventListener('click', () => {
+      if(state !== STATE.PLAY) return;
+      showConfirmDialog({
+        title: 'Return to Backstage?',
+        message: 'Leave this run and head back to the main stage?',
+        confirmLabel: 'Leave Run',
+        cancelLabel: 'Stay Here',
+        onConfirm: () => {
+          startMenu();
+        }
+      });
+    });
+  }
+  if(hudRestartBtn){
+    hudRestartBtn.addEventListener('click', () => {
+      if(state !== STATE.PLAY) return;
+      showConfirmDialog({
+        title: 'Restart Level?',
+        message: 'Are you sure you want to restart this encounter from the beginning?',
+        confirmLabel: 'Restart',
+        cancelLabel: 'Keep Going',
+        onConfirm: () => {
+          doResetLevel();
+        }
+      });
+    });
+  }
 
   // ===== Quality toggle =====
   const quality = { mul: 1, particleDensity: 1, hallucinationRate: 1 };
@@ -1438,7 +1462,15 @@
   let jumpscareCooldown = 0;
   let jumpscareActive = false;
   let orientationBlockState = null;
-  function syncHUDVisibility(){ if(!hudLayer) return; hudLayer.style.opacity = state===STATE.PLAY?1:0; }
+  function syncHUDVisibility(){
+    if(hudLayer){
+      hudLayer.style.opacity = state===STATE.PLAY ? 1 : 0;
+    }
+    if(hudControls){
+      const playing = state === STATE.PLAY;
+      hudControls.style.display = playing ? 'flex' : 'none';
+    }
+  }
   syncHUDVisibility();
   const BOOT_MIN_MS = 9000;
   const bootMsgs = [
@@ -2611,6 +2643,41 @@
     return div;
   }
 
+  function showConfirmDialog({ title='Are you sure?', message='This action cannot be undone.', confirmLabel='Confirm', cancelLabel='Cancel', onConfirm, onCancel }={}){
+    if(!ui) return;
+    if(ui.querySelector('.confirm-backdrop')) return;
+    noise(160, 0.16);
+    const shell=document.createElement('div');
+    shell.className='confirm-backdrop';
+    const safeTitle = escHTML(title);
+    const safeMessage = escHTML(message);
+    const safeConfirm = escHTML(confirmLabel);
+    const safeCancel = escHTML(cancelLabel);
+    shell.innerHTML = `
+      <div class="menu confirm-modal">
+        <div class="title" style="font-size:28px">${safeTitle}</div>
+        <p>${safeMessage}</p>
+        <div class="confirm-actions">
+          <button class="btn" id="confirmCancelBtn">${safeCancel}</button>
+          <button class="btn danger" id="confirmOkBtn">${safeConfirm}</button>
+        </div>
+      </div>`;
+    ui.appendChild(shell);
+    ui.style.pointerEvents = 'auto';
+    const cleanup = () => {
+      shell.remove();
+      if(!ui.children.length){ ui.style.pointerEvents = 'none'; }
+    };
+    shell.querySelector('#confirmCancelBtn')?.addEventListener('click', () => {
+      cleanup();
+      if(typeof onCancel === 'function') onCancel();
+    });
+    shell.querySelector('#confirmOkBtn')?.addEventListener('click', () => {
+      cleanup();
+      if(typeof onConfirm === 'function') onConfirm();
+    });
+  }
+
   function announceStreak(streak){
     if(streak<=1 || lastStreakPing===streak) return;
     const important = STREAK_MILESTONES.includes(streak) || (streak>=30 && streak%5===0);
@@ -2932,14 +2999,21 @@
   function showLevelLab(){
     stopGame();
     state = STATE.MENU;
+    const confirmExitLab = () => showConfirmDialog({
+      title: 'Leave Level Lab?',
+      message: 'Unsaved placements vanish if you head back now. Continue anyway?',
+      confirmLabel: 'Leave Lab',
+      cancelLabel: 'Keep Editing',
+      onConfirm: () => startMenu()
+    });
 
     if(settings.deviceType === 'phone'){
       setOverlay(`<div class="menu story" style="max-width:440px">
         <div class="title">Desktop Only</div>
         <p>The Level Lab needs a keyboard or large canvas. Switch the device mode to Tablet or Laptop in settings to continue building.</p>
-        <div class="row" style="gap:12px"><button class="btn" id="labBack">← Menu</button></div>
+        <div class="row" style="gap:12px"><button class="btn" id="labBack">⌂ Menu</button></div>
       </div>`);
-      document.getElementById('labBack')?.addEventListener('click', () => startMenu());
+      document.getElementById('labBack')?.addEventListener('click', confirmExitLab);
       return;
     }
 
@@ -3093,7 +3167,7 @@
             <textarea id="labData" spellcheck="false" placeholder="JSON layout appears here after adding parts or importing." style="min-height:160px;padding:12px;border-radius:12px;border:1px solid rgba(248,113,113,.28);background:rgba(16,16,22,.92);color:#f8fafc;font-family:'Courier New',monospace;font-size:12px"></textarea>
             <div class="warn" id="labMessage"></div>
           </section>
-          <div class="row" style="gap:12px"><button class="btn" id="labBack">← Back</button></div>
+          <div class="row" style="gap:12px"><button class="btn" id="labBack">⌂ Menu</button></div>
         </div>`);
 
       attach(entries);
@@ -3428,7 +3502,7 @@
         updateOutputs();
       });
 
-      document.getElementById('labBack')?.addEventListener('click', () => startMenu());
+      document.getElementById('labBack')?.addEventListener('click', confirmExitLab);
 
       labList?.querySelectorAll('.lab-saved').forEach(tile => {
         const name = tile.dataset.name;
@@ -3872,7 +3946,8 @@
     persistSettings();
     setOverlay(`<div class="menu"><div class="title">Crowd Booed You Off</div><div class="subtitle">Final score <b>${final}</b> · Level ${world.level}</div><div class="row" style="gap:10px"><button class="btn good" id="retryBtn">↺ Encore</button><button class="btn" id="menuBtn">☰ Backstage</button></div></div>`);
     document.getElementById('retryBtn').onclick=()=>{ setOverlay(''); state=STATE.PLAY; world.score=0; settings.storyProgress=1; persistSettings(); loadLevel(1); updateHUD(); world.aim.ready=true; syncHUDVisibility(); };
-    document.getElementById('menuBtn').onclick=()=> startMenu();
+    const backstageBtn = ui.querySelector('#menuBtn') || document.getElementById('menuBtn');
+    if(backstageBtn){ backstageBtn.onclick = () => openSettings(); }
   }
 
   function showStoryComplete(finalScore){
