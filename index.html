@@ -288,7 +288,6 @@
   const stageEl = document.getElementById('stage');
   const crtEl = stageEl ? stageEl.querySelector('.crt') : null;
   let renderScale = 1;
-  let levelLabActive = false;
 
   // ===== HUD refs =====
   const ballsLabel = document.getElementById('ballsLabel');
@@ -3800,7 +3799,6 @@
   }
 
   function startMenu(){
-    levelLabActive = false;
     customSessionName = null;
     if(state===STATE.PLAY && gameMode===MODE.STORY){
       settings.storyProgress = Math.max(1, Math.min(TOTAL_LEVELS, world.level));
