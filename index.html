@@ -100,7 +100,7 @@
     .subtitle{opacity:.92;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:#fca5a5}
     .warn{font-size:12px;opacity:.85;color:#fca5a5;max-width:640px}
     .flash{animation:flash 1.6s infinite}
-    .score-list{display:grid;gap:.45rem;margin-top:12px;width:100%;max-width:360px;max-height:200px;overflow:auto;padding-right:4px}
+    .score-list{display:grid;gap:.45rem;margin-top:12px;width:100%;max-width:520px;max-height:220px;overflow:auto;padding-right:6px}
     .score-item{display:flex;justify-content:space-between;align-items:center;padding:.45rem .75rem;border-radius:12px;background:rgba(14,14,16,.7);border:1px solid rgba(248,113,113,.2);color:#fef2ff;font-size:13px;text-transform:uppercase;letter-spacing:.12em}
     .score-item span:last-child{font-weight:700;letter-spacing:.1em;color:#ffe4f8}
     .score-list-title{margin-top:16px;font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:rgba(248,189,189,.72)}
@@ -316,7 +316,7 @@
   };
   const QUALITY_OPTIONS = ['Low','Med','High'];
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.1.1';
   const POW = { NONE:'none', ASTRAL:'astral', VOLTAIC:'voltaic', GRAVEN:'graven' };
   const FEAR_STAGES = [
     { threshold: 0, label: 'Calm', className: 'fear-0' },
@@ -3735,7 +3735,7 @@
     setOverlay(`
       <div class="menu" style="gap:18px">
         <style id="homeStyles">
-          .menu-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;max-width:520px;margin:0 auto}
+          .menu-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;width:100%;max-width:640px;margin:0 auto}
           .menu-actions .btn{justify-content:center}
           .menu-meta{display:grid;gap:14px;width:100%;max-width:520px;margin:0 auto}
         </style>
@@ -3744,8 +3744,8 @@
         <div class="menu-actions">
           <button class="btn play good" id="playBtn">${resumeLabel}</button>
           ${freeplayButton}
-          <button class="btn" id="communityBtn">🌐 Community</button>
-          <button class="btn" id="labBtn">🧪 Level Lab</button>
+          <button class="btn locked" id="communityBtn" disabled title="Clear Story to unlock">🔒 Community</button>
+          <button class="btn locked" id="labBtn" disabled title="Clear Story to unlock">🔒 Level Lab</button>
           <button class="btn" id="loreBtn">ℹ How to Play</button>
           <button class="btn" id="creditsBtn">📜 Credits</button>
         </div>
@@ -3806,7 +3806,7 @@
       return `<button type="button" class="score-card" data-level="${level}">Level ${level}<span>Best ${formatScore(getBestScore(level))}</span></button>`;
     }).join('');
     const totalNote = unlockedCount < TOTAL_LEVELS && !settings.storyCleared ? `<div class="warn" style="font-size:11px">Clear more Story levels to unlock additional Freeplay hunts.</div>` : '';
-    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-list" style="max-height:240px;width:100%;max-width:420px;overflow:auto">${cards}</div>${totalNote}<div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
+    setOverlay(`<div class="menu"><div class="title">Freeplay</div><div class="subtitle">Pick a level to replay</div><div class="score-list" style="max-height:240px;width:100%;max-width:520px;overflow:auto">${cards}</div>${totalNote}<div class="row" style="gap:10px"><button class="btn" id="freeplayBack">← Back</button></div></div>`);
     document.querySelectorAll('.score-card').forEach(btn=>{
       btn.onclick = ()=> startFreeplay(Number(btn.dataset.level));
     });
