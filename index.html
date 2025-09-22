@@ -18,10 +18,12 @@
     .danger{border-color:rgba(239,68,68,.55);background:rgba(127,29,29,.9);color:#fee2e2}
     .good{border-color:rgba(248,113,113,.35);background:rgba(153,27,27,.82);color:#fee2e2}
     .row{display:flex;align-items:center;gap:.6rem}
-    #menuBtn.btn-menu{border:1px solid rgba(248,113,113,.45);background:linear-gradient(135deg, rgba(38,17,20,.92), rgba(16,7,10,.96));color:#fde68a;font-family:"Cinzel",serif;letter-spacing:.18em;text-transform:uppercase;padding:.55rem 1rem;box-shadow:0 14px 32px rgba(0,0,0,.45);gap:.45rem}
-    #menuBtn.btn-menu .icon{font-size:16px;color:#f87171;text-shadow:0 0 12px rgba(248,113,113,.55)}
-    #menuBtn.btn-menu .label{font-size:12px}
-    #menuBtn.btn-menu:hover{background:linear-gradient(135deg, rgba(54,14,22,.94), rgba(18,9,14,.98));}
+    .header-buttons{display:flex;align-items:center;gap:.6rem}
+    .btn.btn-menu{border:1px solid rgba(248,113,113,.45);background:linear-gradient(135deg, rgba(38,17,20,.92), rgba(16,7,10,.96));color:#fde68a;font-family:"Cinzel",serif;letter-spacing:.18em;text-transform:uppercase;padding:.55rem 1rem;box-shadow:0 14px 32px rgba(0,0,0,.45);gap:.45rem;min-height:40px}
+    .btn.btn-menu.header-aux{padding:.5rem .9rem;letter-spacing:.14em;min-height:38px}
+    .btn.btn-menu .icon{font-size:16px;color:#f87171;text-shadow:0 0 12px rgba(248,113,113,.55)}
+    .btn.btn-menu .label{font-size:12px}
+    .btn.btn-menu:hover{background:linear-gradient(135deg, rgba(54,14,22,.94), rgba(18,9,14,.98));}
     main{display:flex;align-items:center;justify-content:center;padding:0.35rem clamp(0.35rem,2vw,1rem)}
 
     /* CRT look */
@@ -36,8 +38,6 @@
     canvas{display:block;width:100%;height:100%;background:#060608;border:1px solid rgba(248,113,113,.25);border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.78)}
 
     .hud-layer{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-start;padding:18px 24px 14px;pointer-events:none;color:#f9eeff;text-shadow:0 0 12px rgba(255,255,255,.12);opacity:1;transition:opacity .2s ease}
-    .hud-controls{position:absolute;top:18px;right:24px;display:none;flex-direction:column;gap:10px;z-index:6;pointer-events:auto}
-    .hud-btn{font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:.42rem .85rem;justify-content:center}
     .hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1.2rem;flex-wrap:wrap}
     .hud-bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:1.2rem;flex-wrap:wrap}
     .hud-cluster{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-start}
@@ -187,7 +187,9 @@
     @media (max-width: 768px){
       header{padding:.45rem .85rem;gap:.6rem}
       header h1{font-size:11px;letter-spacing:.22em}
-      #menuBtn.btn-menu{padding:.45rem .8rem;letter-spacing:.12em}
+      .header-buttons{gap:.4rem}
+      .btn.btn-menu{padding:.45rem .8rem;letter-spacing:.12em;min-height:36px}
+      .btn.btn-menu.header-aux{padding:.42rem .7rem}
       main{padding:0.2rem 0.35rem}
       footer{padding:.45rem 1rem;font-size:11px}
       .settings-panel{gap:22px;padding:28px}
@@ -201,7 +203,15 @@
     <header>
       <h1>Evil Peggle</h1>
       <div class="sp"></div>
-      <div class="row">
+      <div class="row header-buttons">
+        <button id="homeBtn" class="btn btn-menu header-aux" title="Return Home" hidden>
+          <span class="icon">⌂</span>
+          <span class="label">Home</span>
+        </button>
+        <button id="restartBtn" class="btn btn-menu header-aux" title="Restart Level" hidden>
+          <span class="icon">⟲</span>
+          <span class="label">Restart</span>
+        </button>
         <button id="menuBtn" class="btn btn-menu" title="Backstage">
           <span class="icon">☰</span>
           <span class="label">Backstage</span>
@@ -253,10 +263,6 @@
             </div>
           </div>
         </div>
-        <div class="hud-controls" id="hudControls">
-          <button class="btn hud-btn" id="hudHomeBtn">⌂ Home</button>
-          <button class="btn hud-btn" id="hudRestartBtn">⟲ Restart</button>
-        </div>
           <div class="overlay" id="uiOverlay"></div>
           <div class="orientation-overlay" id="orientationOverlay"></div>
         </div>
@@ -295,9 +301,8 @@
   const fearStageLabel = document.getElementById('fearStageLabel');
   const powerLabel  = document.getElementById('powerLabel');
   const hudLayer = document.getElementById('hudLayer');
-  const hudControls = document.getElementById('hudControls');
-  const hudHomeBtn = document.getElementById('hudHomeBtn');
-  const hudRestartBtn = document.getElementById('hudRestartBtn');
+  const homeBtn = document.getElementById('homeBtn');
+  const restartBtn = document.getElementById('restartBtn');
   const progressFill= document.getElementById('progressFill');
   const settingsModal = document.getElementById('settingsModal');
   const playerBadge = document.getElementById('playerBadge');
@@ -1120,22 +1125,26 @@
   const muteBtn = document.getElementById('muteBtn');
   const menuBtn = document.getElementById('menuBtn');
   if(menuBtn){ menuBtn.onclick = () => openSettings(); }
-  if(hudHomeBtn){
-    hudHomeBtn.addEventListener('click', () => {
-      if(state !== STATE.PLAY) return;
+  if(homeBtn){
+    homeBtn.addEventListener('click', () => {
+      const playing = state === STATE.PLAY;
+      const inLab = !!ui.querySelector('.level-lab');
+      if(!playing && !inLab) return;
       showConfirmDialog({
-        title: 'Return to Backstage?',
-        message: 'Leave this run and head back to the main stage?',
-        confirmLabel: 'Leave Run',
-        cancelLabel: 'Stay Here',
+        title: playing ? 'Return to Backstage?' : 'Leave Level Lab?',
+        message: playing
+          ? 'Leave this run and head back to the main stage?'
+          : 'Unsaved placements vanish if you head back now. Continue anyway?',
+        confirmLabel: playing ? 'Leave Run' : 'Leave Lab',
+        cancelLabel: playing ? 'Stay Here' : 'Keep Editing',
         onConfirm: () => {
           startMenu();
         }
       });
     });
   }
-  if(hudRestartBtn){
-    hudRestartBtn.addEventListener('click', () => {
+  if(restartBtn){
+    restartBtn.addEventListener('click', () => {
       if(state !== STATE.PLAY) return;
       showConfirmDialog({
         title: 'Restart Level?',
@@ -1466,10 +1475,10 @@
     if(hudLayer){
       hudLayer.style.opacity = state===STATE.PLAY ? 1 : 0;
     }
-    if(hudControls){
-      const playing = state === STATE.PLAY;
-      hudControls.style.display = playing ? 'flex' : 'none';
-    }
+    const playing = state === STATE.PLAY;
+    const inLab = !!ui.querySelector('.level-lab');
+    if(homeBtn){ homeBtn.hidden = !(playing || inLab); }
+    if(restartBtn){ restartBtn.hidden = !playing; }
   }
   syncHUDVisibility();
   const BOOT_MIN_MS = 9000;
