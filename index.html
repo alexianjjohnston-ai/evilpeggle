@@ -182,6 +182,47 @@
     footer{display:flex;justify-content:space-between;align-items:center;padding:.6rem 1.6rem;border-top:1px solid rgba(239,68,68,.28);background:rgba(15,15,17,.92);backdrop-filter:blur(10px);font-size:12px;color:rgba(248,250,252,.7)}
     footer .footer-note{letter-spacing:.12em;text-transform:uppercase}
 
+    body[data-device='tablet'] header{padding:.55rem 1rem;gap:.85rem}
+    body[data-device='tablet'] header h1{font-size:12px;letter-spacing:.24em}
+    body[data-device='tablet'] .btn.btn-menu{padding:.5rem .95rem;min-height:38px}
+    body[data-device='tablet'] .btn.btn-menu .label{font-size:11px}
+    body[data-device='tablet'] main{padding:0.3rem clamp(0.35rem,1.6vw,0.9rem)}
+    body[data-device='tablet'] .hud-layer{padding:16px 18px 12px}
+    body[data-device='tablet'] .hud-top, body[data-device='tablet'] .hud-bottom{gap:.9rem}
+    body[data-device='tablet'] .hud-chip .value{font-size:18px}
+    body[data-device='tablet'] .hud-progress{min-width:180px}
+    body[data-device='tablet'] .fear-bar, body[data-device='tablet'] .progress-bar{width:min(240px,56vw)}
+    body[data-device='tablet'] footer{padding:.55rem 1.3rem}
+
+    body[data-device='phone'] .wrap{grid-template-rows:auto minmax(0,1fr) auto}
+    body[data-device='phone'] header{padding:.4rem .65rem;gap:.45rem}
+    body[data-device='phone'] header h1{font-size:10px;letter-spacing:.18em}
+    body[data-device='phone'] header .row{gap:.35rem}
+    body[data-device='phone'] .btn.btn-menu{padding:.35rem .6rem;min-height:30px;font-size:11px;gap:.35rem}
+    body[data-device='phone'] .btn.btn-menu .label{font-size:10px;letter-spacing:.1em}
+    body[data-device='phone'] .btn.btn-menu .icon{font-size:14px}
+    body[data-device='phone'] main{padding:0.2rem 0.3rem 0.35rem;align-items:flex-start}
+    body[data-device='phone'] .stage{max-width:100%}
+    body[data-device='phone'] .crt{border-radius:18px}
+    body[data-device='phone'] canvas{border-radius:18px;box-shadow:0 18px 60px rgba(0,0,0,.72)}
+    body[data-device='phone'] .hud-layer{padding:10px 12px 8px}
+    body[data-device='phone'] .hud-top, body[data-device='phone'] .hud-bottom{flex-direction:column;align-items:stretch;gap:.75rem}
+    body[data-device='phone'] .hud-cluster{width:100%;justify-content:space-between;gap:.4rem}
+    body[data-device='phone'] .hud-chip{min-width:0;flex:1 1 auto}
+    body[data-device='phone'] .hud-chip.tight{min-width:52px;flex:0 0 auto}
+    body[data-device='phone'] .hud-chip.wide{min-width:0}
+    body[data-device='phone'] .hud-chip .label{font-size:9px}
+    body[data-device='phone'] .hud-chip .value{font-size:16px}
+    body[data-device='phone'] .hud-progress{width:100%;min-width:0}
+    body[data-device='phone'] .hud-progress .progress-bar{height:10px}
+    body[data-device='phone'] .fear-bar{width:100%;max-width:none;height:10px}
+    body[data-device='phone'] .progress-bar{width:100%;max-width:none;height:8px}
+    body[data-device='phone'] .progress-stack{width:100%}
+    body[data-device='phone'] .fear-widget{align-self:center;padding:.3rem .55rem}
+    body[data-device='phone'] footer{padding:.5rem .75rem;flex-direction:column;align-items:center;gap:.35rem;font-size:10px;text-align:center}
+    body[data-device='phone'] footer .footer-note{letter-spacing:.1em}
+    body[data-device='phone'] #playerBadge{display:block;width:100%}
+
     @keyframes flash{0%,60%{opacity:.25}70%{opacity:.75}100%{opacity:.25}}
 
     @media (max-width: 768px){
@@ -283,6 +324,7 @@
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const ui = document.getElementById('uiOverlay');
+  const bodyEl = document.body;
   ui.style.pointerEvents = 'none';
   const orientationOverlay = document.getElementById('orientationOverlay');
   const stageEl = document.getElementById('stage');
@@ -932,6 +974,7 @@
         settings.deviceType = DEVICE_OPTIONS[0]?.id || 'laptop';
         persistSettings();
       }
+      applyDeviceLayout();
       const inner = DEVICE_OPTIONS.map(opt => `<span data-id="${opt.id}" class="${opt.id===settings.deviceType? 'active':''}">${escHTML(opt.label)}</span>`).join('');
       deviceTrack.innerHTML = `<div class="wheel-inner">${inner}</div>`;
       if(deviceLocked){ deviceTrack.closest('.option-wheel')?.classList.add('disabled'); }
@@ -944,6 +987,8 @@
       settings.deviceType = deviceOptionIds[nextIdx];
       persistSettings();
       renderDeviceOptions();
+      applyDeviceLayout();
+      resizeStage();
       checkOrientationLock();
     };
     renderDeviceOptions();
@@ -956,6 +1001,8 @@
           settings.deviceType = id;
           persistSettings();
           renderDeviceOptions();
+          applyDeviceLayout();
+          resizeStage();
           checkOrientationLock();
         }
       });
@@ -1025,6 +1072,9 @@
         setAudio(settings.audioEnabled, false);
         persistSettings();
         refreshPlayerBadge();
+        applyDeviceLayout();
+        resizeStage();
+        checkOrientationLock();
         renderSettingsModal();
       });
     }
@@ -1456,6 +1506,28 @@
     { id:'tablet', label:'Tablet', note:'Wider touch lanes and balanced spacing.', img: svgData(DEVICE_SVGS.tablet) },
     { id:'laptop', label:'Laptop / Desktop', note:'Full keyboard shortcuts and crisp pixels.', img: svgData(DEVICE_SVGS.laptop) }
   ];
+  function detectViewportDevice(){
+    const w = window.innerWidth || W;
+    const h = window.innerHeight || H;
+    const shortSide = Math.min(w, h);
+    if(shortSide <= 700) return 'phone';
+    if(shortSide <= 980) return 'tablet';
+    return 'laptop';
+  }
+  function getActiveDevice(){
+    const current = settings.deviceType;
+    if(current && DEVICE_OPTIONS.some(opt => opt.id === current)){
+      return current;
+    }
+    return detectViewportDevice();
+  }
+  function applyDeviceLayout(){
+    const device = getActiveDevice();
+    if(bodyEl){
+      bodyEl.dataset.device = device;
+    }
+    return device;
+  }
   const STATE = { BOOT:0, MENU:1, PLAY:2, GAMEOVER:3, PAUSE:4 };
   let state = STATE.BOOT;
   let bootProg=0;
@@ -2793,12 +2865,17 @@
 
   function resizeStage(){
     if(!stageEl || !crtEl) return;
+    const device = applyDeviceLayout();
     const header = document.querySelector('header');
     const footer = document.querySelector('footer');
     const headerH = header? header.offsetHeight : 0;
     const footerH = footer? footer.offsetHeight : 0;
-    const availableWidth = Math.max(320, window.innerWidth - 24);
-    const availableHeight = Math.max(320, window.innerHeight - headerH - footerH - 32);
+    const marginX = device === 'phone' ? 16 : device === 'tablet' ? 36 : 48;
+    const marginY = device === 'phone' ? 20 : device === 'tablet' ? 36 : 56;
+    const minWidth = device === 'phone' ? 280 : 320;
+    const minHeight = device === 'phone' ? 240 : 320;
+    const availableWidth = Math.max(minWidth, window.innerWidth - marginX);
+    const availableHeight = Math.max(minHeight, window.innerHeight - headerH - footerH - marginY);
     const scale = Math.min(availableWidth / W, availableHeight / H, 1);
     renderScale = scale > 0 ? scale : 0.1;
     const displayWidth = Math.round(W * renderScale);
@@ -2807,8 +2884,11 @@
     stageEl.style.height = `${displayHeight}px`;
     stageEl.style.minHeight = `${displayHeight}px`;
     stageEl.style.maxWidth = `${displayWidth}px`;
-    stageEl.style.marginTop = `${Math.max(0, (availableHeight - displayHeight)/2)}px`;
-    stageEl.style.marginBottom = stageEl.style.marginTop;
+    const extraSpace = Math.max(0, availableHeight - displayHeight);
+    const baseMargin = device === 'phone' ? 6 : device === 'tablet' ? 12 : 18;
+    const marginYpx = Math.max(baseMargin, Math.round(extraSpace / 2));
+    stageEl.style.marginTop = `${marginYpx}px`;
+    stageEl.style.marginBottom = `${marginYpx}px`;
     crtEl.style.transform = 'none';
     crtEl.style.width = `${displayWidth}px`;
     crtEl.style.height = `${displayHeight}px`;
@@ -2821,6 +2901,7 @@
   function ensureDeviceType(done){
     const valid = DEVICE_OPTIONS.some(opt => opt.id === settings.deviceType);
     if(valid){
+      applyDeviceLayout();
       checkOrientationLock();
       if(typeof done === 'function') done();
       return;
@@ -2881,6 +2962,7 @@
         centerOn(id);
         settings.deviceType = id;
         persistSettings();
+        applyDeviceLayout();
         setTimeout(()=>{
           setOverlay('');
           resizeStage();
@@ -4161,6 +4243,7 @@
   // ===== Reset/Button actions =====
 
   // ===== Boot & start =====
+  applyDeviceLayout();
   resizeStage();
   showBoot();
   checkOrientationLock();
